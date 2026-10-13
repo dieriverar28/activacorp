@@ -13,23 +13,42 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
-@Preview
-@OptIn(ExperimentalMaterial3Api::class)
+// Stateful composable wrapper that integrates with the ViewModel for runtime navigation.
 @Composable
 fun CrearOportunidadScreen(
-    onVolver: () -> Unit = {}
+    onVolver: () -> Unit = {},
+    viewModel: CrearOportunidadViewModel = viewModel()
 ) {
-    var nombre by remember { mutableStateOf("") }
-    var organizacion by remember { mutableStateOf("") }
-    var comuna by remember { mutableStateOf("") }
+    // Variable para mantener la sincronización de los estados
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    CrearOportunidadContent(
+        uiState = uiState,
+        onNombreChange = { viewModel.cambiarNombre(it) },
+        onOrganizacionChange = { viewModel.cambiarOrganizacion(it) },
+        onComunaChange = { viewModel.cambiarComuna(it) },
+        onGuardar = { viewModel.guardar(onGuardado = onVolver) },
+        onVolver = onVolver
+    )
+}
+
+// Stateless content composable separated from ViewModel instantiation to allow preview rendering.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CrearOportunidadContent(
+    uiState: CrearOportunidadUiState,
+    onNombreChange: (String) -> Unit,
+    onOrganizacionChange: (String) -> Unit,
+    onComunaChange: (String) -> Unit,
+    onGuardar: () -> Unit,
+    onVolver: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -46,49 +65,79 @@ fun CrearOportunidadScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
             OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
-                label = { Text("Nombre de la oportunidad") },
+                value = uiState.nombre,
+                onValueChange = onNombreChange,
+                label = {
+                    Text("Nombre de la oportunidad")
+                },
+                isError = uiState.errorNombre,
+                supportingText = {
+                    if (uiState.errorNombre) {
+                        Text("El nombre es obligatorio")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = organizacion,
-                onValueChange = { organizacion = it },
-                label = { Text("Organización") },
+                value = uiState.organizacion,
+                onValueChange = onOrganizacionChange,
+                label = {
+                    Text("Organización")
+                },
+                isError = uiState.errorOrganizacion,
+                supportingText = {
+                    if (uiState.errorOrganizacion) {
+                        Text("La organización es obligatoria")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = comuna,
-                onValueChange = { comuna = it },
-                label = { Text("Comuna") },
+                value = uiState.comuna,
+                onValueChange = onComunaChange,
+                label = {
+                    Text("Comuna")
+                },
+                isError = uiState.errorComuna,
+                supportingText = {
+                    if (uiState.errorComuna) {
+                        Text("La comuna es obligatoria")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Button(
-                onClick = {
-                    // Por ahora solo imprimimos los datos y volvemos
-                    println("***** NUEVA OPORTUNIDAD *****")
-                    println("Nombre: $nombre")
-                    println("Organización: $organizacion")
-                    println("Comuna: $comuna")
-                    onVolver()
-                },
+                onClick = onGuardar,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Guardar")
             }
 
             Button(
-                onClick = {
-                    onVolver()
-                },
+                onClick = onVolver,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Volver")
             }
         }
     }
+}
+
+// Dedicated Preview function rendering the stateless content composable without ViewModel dependencies.
+@Preview(showBackground = true)
+@Composable
+fun CrearOportunidadScreenPreview() {
+    CrearOportunidadContent(
+        uiState = CrearOportunidadUiState(),
+        onNombreChange = {},
+        onOrganizacionChange = {},
+        onComunaChange = {},
+        onGuardar = {},
+        onVolver = {}
+    )
 }
