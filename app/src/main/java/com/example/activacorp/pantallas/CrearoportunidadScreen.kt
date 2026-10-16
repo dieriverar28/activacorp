@@ -1,9 +1,13 @@
 package com.example.activacorp.pantallas
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -14,10 +18,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 
 // Stateful composable wrapper that integrates with the ViewModel for runtime navigation.
 @Composable
@@ -28,11 +34,25 @@ fun CrearOportunidadScreen(
     // Variable para mantener la sincronización de los estados
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Launcher: abre el selector de fotos del sistema y entrega la imagen elegida
+    val selectorImagen = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.cambiarImagen(uri)
+        }
+    }
+
     CrearOportunidadContent(
         uiState = uiState,
         onNombreChange = { viewModel.cambiarNombre(it) },
         onOrganizacionChange = { viewModel.cambiarOrganizacion(it) },
         onComunaChange = { viewModel.cambiarComuna(it) },
+        onSeleccionarImagen = {
+            selectorImagen.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        },
         onGuardar = { viewModel.guardar(onGuardado = onVolver) },
         onVolver = onVolver
     )
@@ -46,6 +66,7 @@ fun CrearOportunidadContent(
     onNombreChange: (String) -> Unit,
     onOrganizacionChange: (String) -> Unit,
     onComunaChange: (String) -> Unit,
+    onSeleccionarImagen: () -> Unit,
     onGuardar: () -> Unit,
     onVolver: () -> Unit
 ) {
@@ -111,6 +132,28 @@ fun CrearOportunidadContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Botón para elegir foto + vista previa
+            Button(
+                onClick = onSeleccionarImagen,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (uiState.imagenUri == null) "Seleccionar imagen"
+                    else "Cambiar imagen"
+                )
+            }
+
+            if (uiState.imagenUri != null) {
+                AsyncImage(
+                    model = uiState.imagenUri,
+                    contentDescription = "Imagen de la oportunidad",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                )
+            }
+
             Button(
                 onClick = onGuardar,
                 modifier = Modifier.fillMaxWidth()
@@ -137,6 +180,7 @@ fun CrearOportunidadScreenPreview() {
         onNombreChange = {},
         onOrganizacionChange = {},
         onComunaChange = {},
+        onSeleccionarImagen = {},
         onGuardar = {},
         onVolver = {}
     )
