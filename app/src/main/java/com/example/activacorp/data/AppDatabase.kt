@@ -4,14 +4,28 @@ import android.content.Context
 import androidx.room3.Database
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
+import com.example.activacorp.model.Contacto
 import com.example.activacorp.model.Oportunidad
+import com.example.activacorp.model.Organizacion
+import com.example.activacorp.model.Seguimiento
+import com.example.activacorp.model.Usuario
 
 @Database(
-    entities = [Oportunidad::class],
+    entities = [
+        Usuario::class,
+        Organizacion::class,
+        Contacto::class,
+        Oportunidad::class,
+        Seguimiento::class
+    ],
     version = 1
 )
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun usuarioDao(): UsuarioDao
+    abstract fun organizacionDao(): OrganizacionDao
+    abstract fun contactoDao(): ContactoDao
     abstract fun oportunidadDao(): OportunidadDao
+    abstract fun seguimientoDao(): SeguimientoDao
 
     companion object {
         @Volatile

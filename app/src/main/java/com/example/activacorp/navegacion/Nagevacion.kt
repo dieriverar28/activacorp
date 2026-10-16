@@ -1,30 +1,59 @@
 package com.example.activacorp.navegacion
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.activacorp.pantallas.InicioScreen
-import com.example.activacorp.pantallas.OportunidadesScreen
+import androidx.navigation.navArgument
 import com.example.activacorp.pantallas.CrearOportunidadScreen
-
+import com.example.activacorp.pantallas.DashboardScreen
+import com.example.activacorp.pantallas.DetalleOportunidadScreen
+import com.example.activacorp.pantallas.LoginScreen
+import com.example.activacorp.pantallas.OportunidadesScreen
 
 @Composable
-public fun Navegacion() {
+fun Navegacion() {
     val navController = rememberNavController()
     NavHost(
         navController = navController,
-        startDestination = "inicio"
+        startDestination = "login"
     ) {
-        composable("inicio") {
-            InicioScreen(
+        composable("login") {
+            LoginScreen(
+                onLoginExitoso = {
+                    // Se quita el login de la pila para que "atrás" no vuelva a él
+                    navController.navigate("dashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable("dashboard") {
+            DashboardScreen(
                 onIrAOportunidades = { navController.navigate("oportunidades") },
-                onIrACrear = { navController.navigate("crear_oportunidad") }
+                onIrACrear = { navController.navigate("crear_oportunidad") },
+                onCerrarSesion = {
+                    navController.navigate("login") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
+                }
             )
         }
         composable("oportunidades") {
             OportunidadesScreen(
+                onIrADetalle = { id -> navController.navigate("detalle/$id") },
                 onIrACrear = { navController.navigate("crear_oportunidad") },
+                onVolver = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "detalle/{id}",
+            arguments = listOf(
+                navArgument("id") { type = NavType.IntType }
+            )
+        ) {
+            DetalleOportunidadScreen(
                 onVolver = { navController.popBackStack() }
             )
         }
