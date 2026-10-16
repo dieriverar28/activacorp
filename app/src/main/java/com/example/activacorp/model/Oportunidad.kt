@@ -9,5 +9,7 @@ data class Oportunidad(
     val id: Int = 0,
     val nombre: String,
     val organizacion: String,
-    val comuna: String
+    val comuna: String,
+    //
+    val imagenUri :String ?=null
 )
