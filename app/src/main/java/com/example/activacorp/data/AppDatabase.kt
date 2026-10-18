@@ -1,9 +1,9 @@
 package com.example.activacorp.data
 
 import android.content.Context
-import androidx.room3.Database
-import androidx.room3.Room
-import androidx.room3.RoomDatabase
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import com.example.activacorp.model.Contacto
 import com.example.activacorp.model.Oportunidad
 import com.example.activacorp.model.Organizacion

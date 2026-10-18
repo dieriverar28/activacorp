@@ -40,3 +40,9 @@ fun validarPublicoEsperado(texto: String): Boolean {
     val numero = texto.toIntOrNull()
     return numero != null && numero > 0
 }
+
+// Acepta números como +56 9 5550 0001 o 955500001 (entre 8 y 12 dígitos, con + opcional al inicio)
+fun validarTelefono(telefono: String): Boolean {
+    val limpio = telefono.replace(" ", "").replace("-", "")
+    return Regex("^\\+?[0-9]{8,12}$").matches(limpio)
+}

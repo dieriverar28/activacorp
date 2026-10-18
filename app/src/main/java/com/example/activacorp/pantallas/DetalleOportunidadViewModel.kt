@@ -40,7 +40,7 @@ class DetalleOportunidadViewModel(
 ) : AndroidViewModel(application) {
 
     // El id llega desde la navegación (ruta "detalle/{id}")
-    private val oportunidadId: Int = savedStateHandle["id"] ?: 0
+    private val oportunidadId: Int = savedStateHandle.get<Int>("id") ?: 0
 
     private val database = AppDatabase.getInstance(application)
     private val repository = OportunidadRepository(

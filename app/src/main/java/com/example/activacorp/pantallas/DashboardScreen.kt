@@ -18,41 +18,21 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onIrAOportunidades: () -> Unit = {},
     onIrACrear: () -> Unit = {},
+    onIrAOrganizaciones: () -> Unit = {},
     onCerrarSesion: () -> Unit = {},
     viewModel: DashboardViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    DashboardContent(
-        uiState = uiState,
-        onIrAOportunidades = onIrAOportunidades,
-        onIrACrear = onIrACrear,
-        onCerrarSesion = {
-            viewModel.cerrarSesion()
-            onCerrarSesion()
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DashboardContent(
-    uiState: DashboardUiState,
-    onIrAOportunidades: () -> Unit = {},
-    onIrACrear: () -> Unit = {},
-    onCerrarSesion: () -> Unit = {}
-) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -124,8 +104,18 @@ fun DashboardContent(
                 }
             }
 
+            Button(
+                onClick = {
+                    onIrAOrganizaciones()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Organizaciones y contactos")
+            }
+
             OutlinedButton(
                 onClick = {
+                    viewModel.cerrarSesion()
                     onCerrarSesion()
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -134,20 +124,4 @@ fun DashboardContent(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DashboardScreenPreview() {
-    DashboardContent(
-        uiState = DashboardUiState(
-            nombre = "Camila Rojas",
-            rolEtiqueta = "Ejecutivo",
-            esSupervisor = false,
-            total = 5,
-            proximas = 2,
-            enEspera = 1,
-            sinAsignar = 0
-        )
-    )
 }
