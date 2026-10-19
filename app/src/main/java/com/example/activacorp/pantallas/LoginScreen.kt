@@ -24,14 +24,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-
+/**
+ * PANTALLA: LoginScreen (Stateful Composable)
+ * Conecta el estado del LoginViewModel con la interfaz visual de autenticación.
+ * Observa el flujo del UI State respetando el ciclo de vida de la aplicación mediante collectAsStateWithLifecycle.
+ */
 @Composable
 fun LoginScreen(
-    onLoginExitoso: () -> Unit = {},
-    viewModel: LoginViewModel = viewModel()
+    onLoginExitoso: () -> Unit = {}, // Callback de navegación al autenticar correctamente
+    viewModel: LoginViewModel = viewModel() // Inyección por defecto del ViewModel
 ) {
+    // Suscripción segura al estado reactivo expuesto por el ViewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Delegación del renderizado en el componente Stateless de presentación
     LoginContent(
         uiState = uiState,
         onCorreoChange = viewModel::cambiarCorreo,
@@ -40,6 +46,11 @@ fun LoginScreen(
     )
 }
 
+/**
+ * PANTALLA: LoginContent (Stateless Composable)
+ * Construye la interfaz gráfica del formulario de inicio de sesión.
+ * Recibe el estado actual (uiState) y emite los eventos mediante funciones lambda.
+ */
 @Composable
 fun LoginContent(
     uiState: LoginUiState,
@@ -47,7 +58,9 @@ fun LoginContent(
     onClaveChange: (String) -> Unit = {},
     onIniciarSesion: () -> Unit = {}
 ) {
+    // Estructura base de pantalla según especificaciones de Material Design 3
     Scaffold { innerPadding ->
+        // Contenedor principal con soporte de desplazamiento vertical (Scroll)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -57,12 +70,14 @@ fun LoginContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Título de la aplicación e instrucción de acceso
             Text(
                 text = "ActivaCorp",
                 style = MaterialTheme.typography.headlineMedium
             )
             Text("Inicia sesión para continuar")
 
+            // Campo de entrada: Correo Electrónico (Con validación de formato)
             OutlinedTextField(
                 value = uiState.correo,
                 onValueChange = onCorreoChange,
@@ -79,6 +94,7 @@ fun LoginContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo de entrada: Contraseña (Con enmascaramiento de caracteres)
             OutlinedTextField(
                 value = uiState.clave,
                 onValueChange = onClaveChange,
@@ -96,6 +112,7 @@ fun LoginContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Alerta visual ante credenciales inválidas o no encontradas en Room
             if (uiState.errorCredenciales) {
                 Text(
                     text = "Correo o contraseña incorrectos",
@@ -103,10 +120,12 @@ fun LoginContent(
                 )
             }
 
+            // Indicador de progreso durante la verificación asíncrona de credenciales
             if (uiState.cargando) {
                 CircularProgressIndicator()
             }
 
+            // Botón Principal: Ejecutar inicio de sesión
             Button(
                 onClick = onIniciarSesion,
                 enabled = !uiState.cargando,
@@ -115,7 +134,7 @@ fun LoginContent(
                 Text("Ingresar")
             }
 
-            // Cuentas ficticias para probar la aplicación
+            // Tarjeta Informativa: Cuentas ficticias precargadas para pruebas y demostración
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -137,6 +156,9 @@ fun LoginContent(
     }
 }
 
+/**
+ * PREVIEW: Renderizado de prueba estática para la pantalla de inicio de sesión en Android Studio.
+ */
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {

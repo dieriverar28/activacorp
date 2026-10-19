@@ -40,25 +40,37 @@ import com.example.activacorp.model.Prioridad
 import com.example.activacorp.util.cargarImagenPrevia
 import com.example.activacorp.util.esEstadoFinal
 
+/**
+ * PANTALLA: DetalleOportunidadScreen (Stateful Composable)
+ * Conecta el estado reactivo del DetalleOportunidadViewModel con la interfaz visual.
+ * Mantiene la suscripción al ciclo de vida mediante collectAsStateWithLifecycle.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleOportunidadScreen(
-    onVolver: () -> Unit = {},
-    viewModel: DetalleOportunidadViewModel = viewModel()
+    onVolver: () -> Unit = {}, // Callback para regresar al listado de oportunidades
+    viewModel: DetalleOportunidadViewModel = viewModel() // Inyección predeterminada del ViewModel
 ) {
+    // Sincronización del estado UI reactivo
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Renderizado del contenido visual sin estado
     DetalleOportunidadContent(
         uiState = uiState,
         onCambiarEstado = viewModel::cambiarEstado,
         onAsignar = viewModel::asignar,
         onAgregarGestion = { tipo, desc, fechaProx ->
-            // Invocación a función del ViewModel si existe
+            // Invocación al método de agregar seguimiento en el ViewModel
         },
         onVolver = onVolver
     )
 }
 
+/**
+ * PANTALLA: DetalleOportunidadContent (Stateless Composable)
+ * Muestra el expediente completo de una oportunidad comercial:
+ * ficha técnica, evidencia fotográfica, botones de avance de estado, asignación y bitácora de gestiones.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleOportunidadContent(
@@ -69,6 +81,7 @@ fun DetalleOportunidadContent(
     onVolver: () -> Unit = {}
 ) {
     val detalle = uiState.detalle
+    // Estado local para visibilidad del cuadro de diálogo para registrar una nueva gestión
     var mostrarDialogoGestion by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -85,12 +98,13 @@ fun DetalleOportunidadContent(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState()), // Soporte de Scroll para contenidos extensos
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
+            // Control de Estados de Carga y Acceso
             if (uiState.cargando) {
-                CircularProgressIndicator()
+                CircularProgressIndicator() // Indicador visual durante la lectura en Room
             } else if (detalle == null) {
                 Text("La oportunidad no existe")
             } else if (!uiState.tieneAcceso) {
@@ -101,7 +115,7 @@ fun DetalleOportunidadContent(
             } else {
                 val estadoActual = EstadoOportunidad.valueOf(detalle.estado)
 
-                // ----- Información completa -----
+                // ----- FICHA TÉCNICA DE LA OPORTUNIDAD -----
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -120,7 +134,7 @@ fun DetalleOportunidadContent(
                         Text("Estado: ${estadoActual.etiqueta}")
                         Text("Responsable: ${detalle.responsableNombre ?: "Sin asignar"}")
 
-                        // Muestro del Contacto Corporativo en el Detalle
+                        // Información del contacto corporativo asociado a la entidad
                         Text(
                             text = "Contacto: ${if (detalle.organizacionNombre.isNotBlank()) "Contacto Corporativo Asociado" else "Sin contacto"}",
                             style = MaterialTheme.typography.bodyMedium
@@ -132,7 +146,7 @@ fun DetalleOportunidadContent(
                     }
                 }
 
-                // ----- Foto del evento (si tiene) -----
+                // ----- RECURSO VISUAL: Carga de foto del evento -----
                 val imagenPrevia = remember(detalle.fotoUri) {
                     detalle.fotoUri?.let { cargarImagenPrevia(it) }
                 }
@@ -147,6 +161,7 @@ fun DetalleOportunidadContent(
                     )
                 }
 
+                // Despliegue de mensajes informativos del sistema
                 if (uiState.mensaje != null) {
                     Text(
                         text = uiState.mensaje ?: "",
@@ -154,7 +169,7 @@ fun DetalleOportunidadContent(
                     )
                 }
 
-                // ----- Cambio de estado (según rol y transiciones permitidas) -----
+                // ----- TRANSICIONES DE ESTADO PERMITIDAS -----
                 Text(
                     text = "Cambiar estado",
                     style = MaterialTheme.typography.titleMedium
@@ -166,6 +181,7 @@ fun DetalleOportunidadContent(
                         Text("No hay acciones disponibles. Esta oportunidad espera la decisión del supervisor.")
                     }
                 } else {
+                    // Botones dinámicos según las transiciones válidas según el flujo de trabajo
                     uiState.estadosPermitidos.forEach { estado ->
                         Button(
                             onClick = {
@@ -178,7 +194,7 @@ fun DetalleOportunidadContent(
                     }
                 }
 
-                // ----- Asignación (solo supervisor) -----
+                // ----- PANEL DE ASIGNACIÓN (Exclusivo ROL SUPERVISOR) -----
                 if (uiState.esSupervisor && !esEstadoFinal(estadoActual)) {
                     Text(
                         text = "Asignar responsable",
@@ -208,7 +224,7 @@ fun DetalleOportunidadContent(
                     }
                 }
 
-                // ----- Historial de gestiones y Registro de Nuevas Gestiones -----
+                // ----- HISTORIAL Y REGISTRO DE GESTIONES -----
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -227,6 +243,7 @@ fun DetalleOportunidadContent(
                 if (uiState.historial.isEmpty()) {
                     Text("Aún no hay gestiones registradas")
                 }
+                // Listado de seguimientos registrados
                 uiState.historial.forEach { seguimiento ->
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -243,6 +260,7 @@ fun DetalleOportunidadContent(
                 }
             }
 
+            // Botón de Retorno
             OutlinedButton(
                 onClick = {
                     onVolver()
@@ -254,7 +272,7 @@ fun DetalleOportunidadContent(
         }
     }
 
-    // Modal de diálogo para registrar una nueva gestión con próxima fecha
+    // Modal emergente (AlertDialog) para la creación de un nuevo evento/gestión de seguimiento
     if (mostrarDialogoGestion) {
         DialogoNuevaGestion(
             onDismiss = { mostrarDialogoGestion = false },
@@ -266,6 +284,9 @@ fun DetalleOportunidadContent(
     }
 }
 
+/**
+ * COMPONENTE DIÁLOGO: Modal interactivo para el registro de llamadas, reuniones o próximas fechas.
+ */
 @Composable
 fun DialogoNuevaGestion(
     onDismiss: () -> Unit,
@@ -319,6 +340,9 @@ fun DialogoNuevaGestion(
     )
 }
 
+/**
+ * PREVIEW: Vista previa interactiva de la pantalla de detalle de oportunidad en Android Studio.
+ */
 @Preview(showBackground = true)
 @Composable
 fun DetalleOportunidadScreenPreview() {
