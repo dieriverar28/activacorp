@@ -1,12 +1,15 @@
 package com.example.activacorp.util
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -42,7 +45,7 @@ class CamaraHelper(
 
 /**
  * COMPOSABLE HELPER: rememberCamaraLauncher
- * Hook personalizado que encapsula el launcher de cámara para Jetpack Compose.
+ * Hook personalizado que encapsula el launcher de cámara y la solicitud de permisos en tiempo de ejecución para Jetpack Compose.
  */
 @Composable
 fun rememberCamaraLauncher(
@@ -58,10 +61,30 @@ fun rememberCamaraLauncher(
         onFotoCapturada(exito, tempUri.value)
     }
 
+    val launcherPermiso = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        if (concedido) {
+            val uri = camaraHelper.crearUriFotoTemporal()
+            tempUri.value = uri
+            launcher.launch(uri)
+        } else {
+            onFotoCapturada(false, null)
+        }
+    }
+
     val tomarFoto: () -> Unit = {
-        val uri = camaraHelper.crearUriFotoTemporal()
-        tempUri.value = uri
-        launcher.launch(uri)
+        val permissionCheck = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        )
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val uri = camaraHelper.crearUriFotoTemporal()
+            tempUri.value = uri
+            launcher.launch(uri)
+        } else {
+            launcherPermiso.launch(Manifest.permission.CAMERA)
+        }
     }
 
     return Pair(tempUri.value, tomarFoto)

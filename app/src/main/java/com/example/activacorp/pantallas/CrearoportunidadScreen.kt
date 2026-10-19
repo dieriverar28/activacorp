@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.activacorp.model.Prioridad
 import com.example.activacorp.util.cargarImagenPrevia
+import com.example.activacorp.util.rememberCamaraLauncher
 
 /**
  * PANTALLA: CrearOportunidadScreen (Stateful Composable)
@@ -97,6 +98,13 @@ fun CrearOportunidadContent(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
+            onImagenSelect(uri)
+        }
+    }
+
+    // RECURSO NATIVO: Launcher para capturar foto con la Cámara
+    val (_, tomarFoto) = rememberCamaraLauncher { exito, uri ->
+        if (exito && uri != null) {
             onImagenSelect(uri)
         }
     }
@@ -232,6 +240,14 @@ fun CrearOportunidadContent(
                         .fillMaxWidth()
                         .height(200.dp)
                 )
+            }
+
+            // Botón para tomar foto con la Cámara
+            OutlinedButton(
+                onClick = tomarFoto,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Tomar foto con la cámara")
             }
 
             // Botón para invocar la Galería nativa de Android
