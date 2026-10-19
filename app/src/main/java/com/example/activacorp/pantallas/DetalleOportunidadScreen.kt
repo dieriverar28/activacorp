@@ -11,32 +11,30 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.activacorp.model.EstadoOportunidad
-import com.example.activacorp.model.OportunidadConDatos
 import com.example.activacorp.model.Prioridad
+import com.example.activacorp.ui.IndicadorEstadoAnimado
+import com.example.activacorp.ui.MensajeAlertaAnimado
 import com.example.activacorp.util.cargarImagenPrevia
 import com.example.activacorp.util.esEstadoFinal
 
@@ -48,6 +46,7 @@ import com.example.activacorp.util.esEstadoFinal
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleOportunidadScreen(
+    onIrAEditar: () -> Unit = {}, // Callback para navegar a la pantalla de edición
     onVolver: () -> Unit = {}, // Callback para regresar al listado de oportunidades
     viewModel: DetalleOportunidadViewModel = viewModel() // Inyección predeterminada del ViewModel
 ) {
@@ -62,6 +61,7 @@ fun DetalleOportunidadScreen(
         onAgregarGestion = { tipo, desc, fechaProx ->
             // Invocación al método de agregar seguimiento en el ViewModel
         },
+        onIrAEditar = onIrAEditar,
         onVolver = onVolver
     )
 }
@@ -78,6 +78,7 @@ fun DetalleOportunidadContent(
     onCambiarEstado: (EstadoOportunidad) -> Unit = {},
     onAsignar: (com.example.activacorp.model.Usuario) -> Unit = {},
     onAgregarGestion: (tipo: String, descripcion: String, fechaProximo: String) -> Unit = { _, _, _ -> },
+    onIrAEditar: () -> Unit = {},
     onVolver: () -> Unit = {}
 ) {
     val detalle = uiState.detalle
@@ -131,7 +132,18 @@ fun DetalleOportunidadContent(
                         Text("Ubicación: ${detalle.ubicacion}, ${detalle.comuna}")
                         Text("Público esperado: ${detalle.publicoEsperado}")
                         Text("Prioridad: ${Prioridad.valueOf(detalle.prioridad).etiqueta}")
-                        Text("Estado: ${estadoActual.etiqueta}")
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("Estado:")
+                            IndicadorEstadoAnimado(
+                                estadoConfirmado = detalle.estado == EstadoOportunidad.PARTICIPACION_CONFIRMADA.name,
+                                etiqueta = estadoActual.etiqueta
+                            )
+                        }
+
                         Text("Responsable: ${detalle.responsableNombre ?: "Sin asignar"}")
 
                         // Información del contacto corporativo asociado a la entidad
@@ -144,6 +156,14 @@ fun DetalleOportunidadContent(
                             Text("Observaciones: ${detalle.observaciones}")
                         }
                     }
+                }
+
+                // Botón para Editar Oportunidad
+                OutlinedButton(
+                    onClick = onIrAEditar,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Editar Oportunidad")
                 }
 
                 // ----- RECURSO VISUAL: Carga de foto del evento -----
@@ -161,13 +181,12 @@ fun DetalleOportunidadContent(
                     )
                 }
 
-                // Despliegue de mensajes informativos del sistema
-                if (uiState.mensaje != null) {
-                    Text(
-                        text = uiState.mensaje ?: "",
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                // Despliegue de mensajes informativos del sistema con Animación
+                MensajeAlertaAnimado(
+                    visible = uiState.mensaje != null,
+                    mensaje = uiState.mensaje ?: "",
+                    esError = false
+                )
 
                 // ----- TRANSICIONES DE ESTADO PERMITIDAS -----
                 Text(
@@ -248,125 +267,22 @@ fun DetalleOportunidadContent(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "${seguimiento.fecha} · ${seguimiento.usuarioNombre}",
-                                style = MaterialTheme.typography.labelMedium
+                                text = "Acción: ${seguimiento.accion}",
+                                style = MaterialTheme.typography.titleSmall
                             )
-                            Text(seguimiento.descripcion)
+                            Text("Descripción: ${seguimiento.descripcion}")
+                            Text("Fecha: ${seguimiento.fecha}")
+                            Text("Usuario: ${seguimiento.usuarioNombre}")
+                            if (!seguimiento.estadoNuevo.isNullOrBlank()) {
+                                Text("Nuevo Estado: ${seguimiento.estadoNuevo}")
+                            }
                         }
                     }
                 }
             }
-
-            // Botón de Retorno
-            OutlinedButton(
-                onClick = {
-                    onVolver()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Volver")
-            }
         }
     }
-
-    // Modal emergente (AlertDialog) para la creación de un nuevo evento/gestión de seguimiento
-    if (mostrarDialogoGestion) {
-        DialogoNuevaGestion(
-            onDismiss = { mostrarDialogoGestion = false },
-            onGuardar = { tipo, desc, fechaProx ->
-                onAgregarGestion(tipo, desc, fechaProx)
-                mostrarDialogoGestion = false
-            }
-        )
-    }
-}
-
-/**
- * COMPONENTE DIÁLOGO: Modal interactivo para el registro de llamadas, reuniones o próximas fechas.
- */
-@Composable
-fun DialogoNuevaGestion(
-    onDismiss: () -> Unit,
-    onGuardar: (tipo: String, descripcion: String, fechaProximo: String) -> Unit
-) {
-    var tipoAccion by remember { mutableStateOf("Llamada") }
-    var descripcion by remember { mutableStateOf("") }
-    var fechaProximo by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Registrar Nueva Gestión") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = tipoAccion,
-                    onValueChange = { tipoAccion = it },
-                    label = { Text("Tipo de Acción") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = descripcion,
-                    onValueChange = { descripcion = it },
-                    label = { Text("Detalle / Observación") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = fechaProximo,
-                    onValueChange = { fechaProximo = it },
-                    label = { Text("Próxima fecha (AAAA-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (descripcion.isNotBlank() && fechaProximo.isNotBlank()) {
-                        onGuardar(tipoAccion, descripcion, fechaProximo)
-                    }
-                }
-            ) {
-                Text("Guardar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
-
-/**
- * PREVIEW: Vista previa interactiva de la pantalla de detalle de oportunidad en Android Studio.
- */
-@Preview(showBackground = true)
-@Composable
-fun DetalleOportunidadScreenPreview() {
-    DetalleOportunidadContent(
-        uiState = DetalleUiState(
-            cargando = false,
-            tieneAcceso = true,
-            detalle = OportunidadConDatos(
-                id = 1,
-                nombre = "Seminario Corporativo 2026",
-                tipoEvento = "Seminario",
-                fechaEvento = "2026-11-15",
-                ubicacion = "Hotel Central",
-                comuna = "Santiago",
-                publicoEsperado = 150,
-                prioridad = Prioridad.ALTA.name,
-                estado = EstadoOportunidad.EVENTO_IDENTIFICADO.name,
-                observaciones = "Sin observaciones",
-                fotoUri = null,
-                organizacionId = 1,
-                organizacionNombre = "Empresa Ejemplo",
-                responsableId = 1,
-                responsableNombre = "Camila Rojas"
-            )
-        )
-    )
 }

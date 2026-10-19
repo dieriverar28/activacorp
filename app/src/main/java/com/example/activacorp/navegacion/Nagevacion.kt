@@ -12,6 +12,7 @@ import com.example.activacorp.pantallas.CrearOrganizacionScreen
 import com.example.activacorp.pantallas.DashboardScreen
 import com.example.activacorp.pantallas.DetalleOportunidadScreen
 import com.example.activacorp.pantallas.DetalleOrganizacionScreen
+import com.example.activacorp.pantallas.EditarOportunidadScreen
 import com.example.activacorp.pantallas.LoginScreen
 import com.example.activacorp.pantallas.OportunidadesScreen
 import com.example.activacorp.pantallas.OrganizacionesScreen
@@ -59,9 +60,24 @@ fun Navegacion() {
             arguments = listOf(
                 navArgument("id") { type = NavType.IntType }
             )
-        ) {
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getInt("id") ?: 0
             DetalleOportunidadScreen(
+                onIrAEditar = { navController.navigate("editar_oportunidad/$id") },
                 onVolver = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "editar_oportunidad/{id}",
+            arguments = listOf(
+                navArgument("id") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getInt("id") ?: 0
+            EditarOportunidadScreen(
+                oportunidadId = id,
+                onVolver = { navController.popBackStack() },
+                onGuardarExito = { navController.popBackStack() }
             )
         }
         composable("crear_oportunidad") {
