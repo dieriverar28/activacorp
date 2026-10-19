@@ -6,8 +6,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Set of Material typography styles to start with
+/**
+ * CONFIGURACIÓN DE TIPOGRAFÍA: Material Design 3
+ * Define los estilos de texto globales de la aplicación (fuentes, tamaños, pesos y espaciados).
+ * Permite estandarizar el aspecto tipográfico en todas las pantallas y componentes Compose.
+ */
 val Typography = Typography(
+    // Estilo predeterminado para bloques de texto principal y descripciones
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -15,7 +20,7 @@ val Typography = Typography(
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     )
-    /* Other default text styles to override
+    /* Sobrescrituras adicionales disponibles según la jerarquía visual deseada:
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,

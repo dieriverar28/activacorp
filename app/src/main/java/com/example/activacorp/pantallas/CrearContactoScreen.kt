@@ -22,14 +22,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-
+/**
+ * PANTALLA: CrearContactoScreen (Contenedor de Estado / Stateful Composable)
+ * Se encarga de conectar la lógica de negocio del ViewModel con la interfaz de usuario.
+ * Maneja la recolección del estado de manera reactiva respetando el ciclo de vida de la aplicación.
+ */
 @Composable
 fun CrearContactoScreen(
-    onVolver: () -> Unit = {},
-    viewModel: CrearContactoViewModel = viewModel()
+    onVolver: () -> Unit = {}, // Callback para navegar hacia la pantalla anterior
+    viewModel: CrearContactoViewModel = viewModel() // Inyección por defecto del ViewModel
 ) {
+    // Recolecta el flujo del estado UI (StateFlow) de forma segura en relación al ciclo de vida
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Delega la renderización de la interfaz al componente Stateless
     CrearContactoContent(
         uiState = uiState,
         onNombreChange = viewModel::cambiarNombre,
@@ -41,6 +47,11 @@ fun CrearContactoScreen(
     )
 }
 
+/**
+ * PANTALLA: CrearContactoContent (Componente de Presentación / Stateless Composable)
+ * Contiene la estructura visual y los campos del formulario para el registro de nuevos contactos.
+ * Recibe el estado actual y emite eventos hacia el nivel superior mediante lambdas.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrearContactoContent(
@@ -52,6 +63,7 @@ fun CrearContactoContent(
     onGuardar: () -> Unit = {},
     onVolver: () -> Unit = {}
 ) {
+    // Scaffold provee la estructura base de Material Design (barra superior, contenido, padding)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -61,15 +73,17 @@ fun CrearContactoContent(
             )
         }
     ) { innerPadding ->
+        // Contenedor principal con soporte para desplazamiento vertical (Scroll)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .verticalScroll(rememberScrollState()), // Permite desplazamiento si la pantalla es pequeña
+            verticalArrangement = Arrangement.spacedBy(12.dp) // Espaciado uniforme entre campos
         ) {
 
+            // Campo de Entrada: Nombre del Contacto con validación de longitud
             OutlinedTextField(
                 value = uiState.nombre,
                 onValueChange = onNombreChange,
@@ -85,6 +99,7 @@ fun CrearContactoContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo de Entrada: Cargo o Área dentro de la empresa
             OutlinedTextField(
                 value = uiState.cargo,
                 onValueChange = onCargoChange,
@@ -100,6 +115,7 @@ fun CrearContactoContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo de Entrada: Correo Electrónico (Validación de formato y duplicidad por cliente)
             OutlinedTextField(
                 value = uiState.correo,
                 onValueChange = onCorreoChange,
@@ -117,6 +133,7 @@ fun CrearContactoContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo de Entrada: Teléfono de Contacto (Validación de longitud de dígitos)
             OutlinedTextField(
                 value = uiState.telefono,
                 onValueChange = onTelefonoChange,
@@ -132,6 +149,7 @@ fun CrearContactoContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Botón de Acción Principal: Confirmar y Guardar
             Button(
                 onClick = onGuardar,
                 modifier = Modifier.fillMaxWidth()
@@ -139,6 +157,7 @@ fun CrearContactoContent(
                 Text("Guardar")
             }
 
+            // Botón Secundario: Cancelar o Regresar a la vista previa
             OutlinedButton(
                 onClick = onVolver,
                 modifier = Modifier.fillMaxWidth()
@@ -149,6 +168,9 @@ fun CrearContactoContent(
     }
 }
 
+/**
+ * PREVIEW: Renderización estática del formulario de creación de contactos para Android Studio Preview.
+ */
 @Preview(showBackground = true)
 @Composable
 fun CrearContactoScreenPreview() {

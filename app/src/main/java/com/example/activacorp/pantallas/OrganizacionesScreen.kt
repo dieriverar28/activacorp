@@ -19,22 +19,28 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.activacorp.model.OrganizacionResumen
 
+/**
+ * PANTALLA: OrganizacionesScreen (Stateful Composable)
+ * Conecta el estado reactivo expuesto por OrganizacionesViewModel con la interfaz visual.
+ * Sincroniza la recolección de datos con el ciclo de vida de Compose mediante collectAsStateWithLifecycle.
+ */
 @Composable
 fun OrganizacionesScreen(
-    onIrADetalle: (Int) -> Unit = {},
-    onIrACrear: () -> Unit = {},
-    onVolver: () -> Unit = {},
-    viewModel: OrganizacionesViewModel = viewModel()
+    onIrADetalle: (Int) -> Unit = {}, // Callback para navegar a la ficha detallada de la organización
+    onIrACrear: () -> Unit = {},      // Callback para abrir el formulario de nueva organización
+    onVolver: () -> Unit = {},         // Callback para regresar al Dashboard
+    viewModel: OrganizacionesViewModel = viewModel() // Inyección predeterminada del ViewModel
 ) {
+    // Suscripción segura al flujo de organizaciones con resumen de contactos
     val organizaciones by viewModel.organizaciones.collectAsStateWithLifecycle()
 
+    // Renderizado del componente Stateless de presentación
     OrganizacionesContent(
         organizaciones = organizaciones,
         onIrADetalle = onIrADetalle,
@@ -43,6 +49,11 @@ fun OrganizacionesScreen(
     )
 }
 
+/**
+ * PANTALLA: OrganizacionesContent (Stateless Composable)
+ * Presenta el directorio de organizaciones mediante un listado optimizado (LazyColumn).
+ * Muestra el nombre, tipo, comuna y total de contactos asociados por cada entidad.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizacionesContent(
@@ -51,6 +62,7 @@ fun OrganizacionesContent(
     onIrACrear: () -> Unit = {},
     onVolver: () -> Unit = {}
 ) {
+    // Estructura base de pantalla según guías de Material Design 3
     Scaffold(
         topBar = {
             TopAppBar(
@@ -68,10 +80,12 @@ fun OrganizacionesContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
+            // Manejo de estado vacío cuando no existen registros en Room
             if (organizaciones.isEmpty()) {
                 Text("Aún no hay organizaciones registradas")
             }
 
+            // Lista de reciclaje eficiente (LazyColumn) para el directorio corporativo
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -81,7 +95,7 @@ fun OrganizacionesContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                onIrADetalle(organizacion.id)
+                                onIrADetalle(organizacion.id) // Navega al detalle pasando el ID
                             }
                     ) {
                         Column(
@@ -99,6 +113,7 @@ fun OrganizacionesContent(
                 }
             }
 
+            // Botón de Acción Principal: Registrar una nueva organización
             Button(
                 onClick = onIrACrear,
                 modifier = Modifier.fillMaxWidth()
@@ -106,6 +121,7 @@ fun OrganizacionesContent(
                 Text("Nueva organización")
             }
 
+            // Botón Secundario: Retorno a la pantalla anterior
             OutlinedButton(
                 onClick = onVolver,
                 modifier = Modifier.fillMaxWidth()
@@ -116,6 +132,9 @@ fun OrganizacionesContent(
     }
 }
 
+/**
+ * PREVIEW: Renderizado de prueba estática del directorio de organizaciones en Android Studio.
+ */
 @Preview(showBackground = true)
 @Composable
 fun OrganizacionesScreenPreview() {

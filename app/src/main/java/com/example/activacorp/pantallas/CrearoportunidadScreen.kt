@@ -34,15 +34,21 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.activacorp.model.Prioridad
 import com.example.activacorp.util.cargarImagenPrevia
 
+/**
+ * PANTALLA: CrearOportunidadScreen (Stateful Composable)
+ * Conecta la lógica del ViewModel con la vista para la creación de oportunidades comerciales.
+ * Recolecta el estado del formulario y el listado de organizaciones disponibles respetando el ciclo de vida.
+ */
 @Composable
 fun CrearOportunidadScreen(
-    onVolver: () -> Unit = {},
-    viewModel: CrearOportunidadViewModel = viewModel()
+    onVolver: () -> Unit = {}, // Callback para navegar a la pantalla anterior
+    viewModel: CrearOportunidadViewModel = viewModel() // Inyección por defecto del ViewModel
 ) {
-    // variables para mantener la sincronización de los estados
+    // Sincronización del estado de la UI y del listado de organizaciones mediante StateFlow
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val organizaciones by viewModel.organizaciones.collectAsStateWithLifecycle()
 
+    // Renderizado del contenido sin estado (Stateless)
     CrearOportunidadContent(
         uiState = uiState,
         organizaciones = organizaciones,
@@ -62,6 +68,11 @@ fun CrearOportunidadScreen(
     )
 }
 
+/**
+ * PANTALLA: CrearOportunidadContent (Stateless Composable)
+ * Contiene el formulario completo de registro de oportunidades, manejo de fotos mediante galería/cámara
+ * y selección de prioridades u organizaciones.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrearOportunidadContent(
@@ -81,7 +92,7 @@ fun CrearOportunidadContent(
     onGuardar: () -> Unit = {},
     onVolver: () -> Unit = {}
 ) {
-    // Selector de imágenes de la galería (no necesita permisos)
+    // RECURSO NATIVO: Launcher para seleccionar medios visuales (Galería) sin requerir permisos explícitos
     val lanzadorGaleria = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -90,7 +101,7 @@ fun CrearOportunidadContent(
         }
     }
 
-    // Vista previa de la foto ya guardada
+    // Carga óptima de la vista previa de la foto seleccionada utilizando memorización
     val imagenPrevia = remember(uiState.fotoUri) {
         uiState.fotoUri?.let { cargarImagenPrevia(it) }
     }
@@ -109,16 +120,15 @@ fun CrearOportunidadContent(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState()), // Permite desplazamiento en pantallas reducidas
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
+            // Campo: Nombre de la oportunidad
             OutlinedTextField(
                 value = uiState.nombre,
                 onValueChange = onNombreChange,
-                label = {
-                    Text("Nombre de la oportunidad")
-                },
+                label = { Text("Nombre de la oportunidad") },
                 isError = uiState.errorNombre,
                 supportingText = {
                     if (uiState.errorNombre) {
@@ -128,12 +138,11 @@ fun CrearOportunidadContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo: Tipo de evento
             OutlinedTextField(
                 value = uiState.tipoEvento,
                 onValueChange = onTipoEventoChange,
-                label = {
-                    Text("Tipo de evento")
-                },
+                label = { Text("Tipo de evento") },
                 isError = uiState.errorTipoEvento,
                 supportingText = {
                     if (uiState.errorTipoEvento) {
@@ -143,12 +152,11 @@ fun CrearOportunidadContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo: Fecha del evento con validación cronológica
             OutlinedTextField(
                 value = uiState.fechaEvento,
                 onValueChange = onFechaEventoChange,
-                label = {
-                    Text("Fecha del evento (AAAA-MM-DD)")
-                },
+                label = { Text("Fecha del evento (AAAA-MM-DD)") },
                 isError = uiState.errorFechaEvento,
                 supportingText = {
                     if (uiState.errorFechaEvento) {
@@ -158,12 +166,11 @@ fun CrearOportunidadContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo: Ubicación física del evento
             OutlinedTextField(
                 value = uiState.ubicacion,
                 onValueChange = onUbicacionChange,
-                label = {
-                    Text("Ubicación")
-                },
+                label = { Text("Ubicación") },
                 isError = uiState.errorUbicacion,
                 supportingText = {
                     if (uiState.errorUbicacion) {
@@ -173,12 +180,11 @@ fun CrearOportunidadContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo: Comuna
             OutlinedTextField(
                 value = uiState.comuna,
                 onValueChange = onComunaChange,
-                label = {
-                    Text("Comuna")
-                },
+                label = { Text("Comuna") },
                 isError = uiState.errorComuna,
                 supportingText = {
                     if (uiState.errorComuna) {
@@ -188,12 +194,11 @@ fun CrearOportunidadContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo: Estimación de público asistente
             OutlinedTextField(
                 value = uiState.publicoEsperado,
                 onValueChange = onPublicoEsperadoChange,
-                label = {
-                    Text("Público esperado")
-                },
+                label = { Text("Público esperado") },
                 isError = uiState.errorPublicoEsperado,
                 supportingText = {
                     if (uiState.errorPublicoEsperado) {
@@ -203,21 +208,21 @@ fun CrearOportunidadContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo opcional: Notas u observaciones adicionales
             OutlinedTextField(
                 value = uiState.observaciones,
                 onValueChange = onObservacionesChange,
-                label = {
-                    Text("Observaciones (opcional)")
-                },
+                label = { Text("Observaciones (opcional)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // ----- Foto del evento -----
+            // SECCIÓN: Adjuntar Foto del Evento
             Text(
                 text = "Foto del evento (opcional)",
                 style = MaterialTheme.typography.titleMedium
             )
 
+            // Renderizado de la vista previa de la imagen seleccionada
             if (imagenPrevia != null) {
                 Image(
                     bitmap = imagenPrevia,
@@ -229,6 +234,7 @@ fun CrearOportunidadContent(
                 )
             }
 
+            // Botón para invocar la Galería nativa de Android
             OutlinedButton(
                 onClick = {
                     lanzadorGaleria.launch(
@@ -242,6 +248,7 @@ fun CrearOportunidadContent(
                 )
             }
 
+            // Botón para remover la imagen cargada
             if (uiState.fotoUri != null) {
                 OutlinedButton(
                     onClick = onImagenQuitar,
@@ -258,7 +265,7 @@ fun CrearOportunidadContent(
                 )
             }
 
-            // ----- Prioridad -----
+            // SECCIÓN: Selector de Prioridades (Baja, Media, Alta)
             Text(
                 text = "Prioridad",
                 style = MaterialTheme.typography.titleMedium
@@ -269,18 +276,14 @@ fun CrearOportunidadContent(
                 Prioridad.entries.forEach { prioridad ->
                     if (uiState.prioridad == prioridad) {
                         Button(
-                            onClick = {
-                                onPrioridadChange(prioridad)
-                            },
+                            onClick = { onPrioridadChange(prioridad) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(prioridad.etiqueta)
                         }
                     } else {
                         OutlinedButton(
-                            onClick = {
-                                onPrioridadChange(prioridad)
-                            },
+                            onClick = { onPrioridadChange(prioridad) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(prioridad.etiqueta)
@@ -289,7 +292,7 @@ fun CrearOportunidadContent(
                 }
             }
 
-            // ----- Organización -----
+            // SECCIÓN: Selección de la Organización Asociada
             Text(
                 text = "Organización",
                 style = MaterialTheme.typography.titleMedium
@@ -297,18 +300,14 @@ fun CrearOportunidadContent(
             organizaciones.forEach { organizacion ->
                 if (uiState.organizacionId == organizacion.id) {
                     Button(
-                        onClick = {
-                            onOrganizacionSelect(organizacion.id)
-                        },
+                        onClick = { onOrganizacionSelect(organizacion.id) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("✓ ${organizacion.nombre}")
                     }
                 } else {
                     OutlinedButton(
-                        onClick = {
-                            onOrganizacionSelect(organizacion.id)
-                        },
+                        onClick = { onOrganizacionSelect(organizacion.id) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(organizacion.nombre)
@@ -322,6 +321,7 @@ fun CrearOportunidadContent(
                 )
             }
 
+            // Muestra de errores generales de procesamiento
             if (uiState.mensajeError != null) {
                 Text(
                     text = uiState.mensajeError ?: "",
@@ -329,6 +329,7 @@ fun CrearOportunidadContent(
                 )
             }
 
+            // Botón Principal: Confirmar y Guardar
             Button(
                 onClick = onGuardar,
                 modifier = Modifier.fillMaxWidth()
@@ -336,6 +337,7 @@ fun CrearOportunidadContent(
                 Text("Guardar")
             }
 
+            // Botón Secundario: Volver
             OutlinedButton(
                 onClick = onVolver,
                 modifier = Modifier.fillMaxWidth()
@@ -346,13 +348,21 @@ fun CrearOportunidadContent(
     }
 }
 
+/**
+ * PREVIEW: Vista previa interactiva de la pantalla de creación de oportunidad en Android Studio.
+ */
 @Preview(showBackground = true)
 @Composable
 fun CrearOportunidadScreenPreview() {
     CrearOportunidadContent(
         uiState = CrearOportunidadUiState(),
         organizaciones = listOf(
-            com.example.activacorp.model.Organizacion(id = 1, nombre = "Empresa Ejemplo", tipo = "Empresa Privada", comuna = "Santiago")
+            com.example.activacorp.model.Organizacion(
+                id = 1,
+                nombre = "Empresa Ejemplo",
+                tipo = "Empresa Privada",
+                comuna = "Santiago"
+            )
         )
     )
 }

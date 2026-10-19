@@ -22,21 +22,29 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+/**
+ * PANTALLA: DashboardScreen (Panel Principal del Sistema)
+ * Ofrece una vista diferenciada según el rol del usuario autenticado (Ejecutivo vs Supervisor).
+ * Muestra el resumen de métricas clave y sirve como centro de navegación de la aplicación.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    onIrAOportunidades: () -> Unit = {},
-    onIrACrear: () -> Unit = {},
-    onIrAOrganizaciones: () -> Unit = {},
-    onCerrarSesion: () -> Unit = {},
-    viewModel: DashboardViewModel = viewModel()
+    onIrAOportunidades: () -> Unit = {},  // Navegación al listado de oportunidades
+    onIrACrear: () -> Unit = {},          // Navegación al formulario de nueva oportunidad
+    onIrAOrganizaciones: () -> Unit = {}, // Navegación al directorio de organizaciones/contactos
+    onCerrarSesion: () -> Unit = {},      // Callback para limpiar la sesión y volver al login
+    viewModel: DashboardViewModel = viewModel() // Inyección por defecto del ViewModel
 ) {
+    // Sincronización del estado de UI respetando el ciclo de vida de Compose
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Estructura contenedora base Material Design 3
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
+                    // Título adaptativo según el rol detectado en la sesión
                     Text(
                         if (uiState.esSupervisor) "Panel del supervisor" else "Panel del ejecutivo"
                     )
@@ -44,6 +52,7 @@ fun DashboardScreen(
             )
         }
     ) { innerPadding ->
+        // Contenedor principal con soporte de Scroll vertical
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -52,12 +61,14 @@ fun DashboardScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Saludo personalizado y etiqueta del rol del usuario activo
             Text(
                 text = "Hola, ${uiState.nombre}",
                 style = MaterialTheme.typography.headlineSmall
             )
             Text(uiState.rolEtiqueta)
 
+            // Tarjeta Informativa (Resumen de Métricas)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -68,6 +79,7 @@ fun DashboardScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
 
+                    // Renderizado condicional de contadores según el perfil de usuario
                     if (uiState.esSupervisor) {
                         Text("Oportunidades totales: ${uiState.total}")
                         Text("Sin responsable asignado: ${uiState.sinAsignar}")
@@ -81,6 +93,7 @@ fun DashboardScreen(
                 }
             }
 
+            // Acciones de Navegación del Sistema
             Button(
                 onClick = {
                     onIrAOportunidades()
@@ -92,7 +105,7 @@ fun DashboardScreen(
                 )
             }
 
-            // Solo el ejecutivo registra oportunidades
+            // Control de Permisos en UI: Solo el rol Ejecutivo puede registrar nuevas oportunidades
             if (!uiState.esSupervisor) {
                 Button(
                     onClick = {
@@ -113,6 +126,7 @@ fun DashboardScreen(
                 Text("Organizaciones y contactos")
             }
 
+            // Cierre de Sesión y limpieza del estado en el ViewModel
             OutlinedButton(
                 onClick = {
                     viewModel.cerrarSesion()

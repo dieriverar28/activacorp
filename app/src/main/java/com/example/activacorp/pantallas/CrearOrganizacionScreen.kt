@@ -17,19 +17,25 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-import androidx.compose.ui.tooling.preview.Preview
-
+/**
+ * PANTALLA: CrearOrganizacionScreen (Stateful Composable)
+ * Contenedor de estado que conecta el ViewModel de creación de organizaciones con la interfaz de usuario.
+ * Recolecta el estado reactivo respetando el ciclo de vida de Android mediante collectAsStateWithLifecycle.
+ */
 @Composable
 fun CrearOrganizacionScreen(
-    onVolver: () -> Unit = {},
-    viewModel: CrearOrganizacionViewModel = viewModel()
+    onVolver: () -> Unit = {}, // Callback para navegar hacia la vista previa
+    viewModel: CrearOrganizacionViewModel = viewModel() // Inyección por defecto del ViewModel
 ) {
+    // Sincronización del estado de la UI expuesto por el ViewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Renderizado del componente Stateless de presentación
     CrearOrganizacionContent(
         uiState = uiState,
         onNombreChange = viewModel::cambiarNombre,
@@ -40,6 +46,11 @@ fun CrearOrganizacionScreen(
     )
 }
 
+/**
+ * PANTALLA: CrearOrganizacionContent (Stateless Composable)
+ * Dibuja el formulario de alta para nuevas organizaciones o clientes corporativos.
+ * Recibe el estado actual (uiState) y emite los eventos a través de funciones lambda.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrearOrganizacionContent(
@@ -50,6 +61,7 @@ fun CrearOrganizacionContent(
     onGuardar: () -> Unit = {},
     onVolver: () -> Unit = {}
 ) {
+    // Estructura base de pantalla según guías de Material Design 3
     Scaffold(
         topBar = {
             TopAppBar(
@@ -59,15 +71,17 @@ fun CrearOrganizacionContent(
             )
         }
     ) { innerPadding ->
+        // Contenedor principal con soporte de desplazamiento vertical (Scroll)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp) // Espaciado entre elementos
         ) {
 
+            // Campo de Entrada: Nombre de la organización (Con validación de formato y duplicidad)
             OutlinedTextField(
                 value = uiState.nombre,
                 onValueChange = onNombreChange,
@@ -85,6 +99,7 @@ fun CrearOrganizacionContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo de Entrada: Tipo de organización (Municipalidad, Empresa, Colegio, etc.)
             OutlinedTextField(
                 value = uiState.tipo,
                 onValueChange = onTipoChange,
@@ -100,6 +115,7 @@ fun CrearOrganizacionContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo de Entrada: Comuna territorial asignada a la entidad
             OutlinedTextField(
                 value = uiState.comuna,
                 onValueChange = onComunaChange,
@@ -115,6 +131,7 @@ fun CrearOrganizacionContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Botón de Acción Principal: Validar y registrar la organización
             Button(
                 onClick = onGuardar,
                 modifier = Modifier.fillMaxWidth()
@@ -122,6 +139,7 @@ fun CrearOrganizacionContent(
                 Text("Guardar")
             }
 
+            // Botón Secundario: Cancelar o volver a la vista anterior
             OutlinedButton(
                 onClick = onVolver,
                 modifier = Modifier.fillMaxWidth()
@@ -132,6 +150,9 @@ fun CrearOrganizacionContent(
     }
 }
 
+/**
+ * PREVIEW: Renderizado de prueba estática para el diseño de la interfaz en Android Studio.
+ */
 @Preview(showBackground = true)
 @Composable
 fun CrearOrganizacionScreenPreview() {

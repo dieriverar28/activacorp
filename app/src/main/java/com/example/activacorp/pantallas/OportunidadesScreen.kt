@@ -30,17 +30,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.activacorp.model.EstadoOportunidad
 import com.example.activacorp.model.Prioridad
 
+/**
+ * PANTALLA: OportunidadesScreen (Listado General con Filtros)
+ * Muestra el catálogo de oportunidades asignadas o globales según el rol del usuario logueado.
+ * Incluye barra de búsqueda por texto, filtros dinámicos por Estado y Prioridad, y lista optimizada con LazyColumn.
+ */
 @Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OportunidadesScreen(
-    onIrADetalle: (Int) -> Unit = {},
-    onIrACrear: () -> Unit = {},
-    onVolver: () -> Unit = {},
-    viewModel: OportunidadesViewModel = viewModel()
+    onIrADetalle: (Int) -> Unit = {}, // Callback para navegar a la ficha detallada
+    onIrACrear: () -> Unit = {},      // Callback para abrir el formulario de nueva oportunidad
+    onVolver: () -> Unit = {},         // Callback para regresar al Dashboard
+    viewModel: OportunidadesViewModel = viewModel() // Inyección predeterminada del ViewModel
 ) {
+    // Sincronización del estado UI reactivo según el ciclo de vida
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Determina si hay algún filtro activo para mostrar el botón de limpieza
     val hayFiltros = uiState.busqueda.isNotBlank() ||
             uiState.filtroEstado != null ||
             uiState.filtroPrioridad != null
@@ -49,6 +56,7 @@ fun OportunidadesScreen(
         topBar = {
             TopAppBar(
                 title = {
+                    // Título adaptativo según el perfil del usuario activo
                     Text(
                         if (uiState.esSupervisor) "Todas las oportunidades" else "Mis oportunidades"
                     )
@@ -64,14 +72,16 @@ fun OportunidadesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
+            // Componente de lista perezosa (LazyColumn) para reciclaje de vistas eficiente
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
-                // ----- Búsqueda y filtros -----
+                // ----- SECCIÓN DE BÚSQUEDA Y FILTROS DIVERSIFICADOS -----
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Campo de texto para búsqueda en tiempo real
                         OutlinedTextField(
                             value = uiState.busqueda,
                             onValueChange = {
@@ -84,6 +94,7 @@ fun OportunidadesScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
 
+                        // Filtro Horizontal por Estado de Oportunidad
                         Text(
                             text = "Estado",
                             style = MaterialTheme.typography.labelLarge
@@ -106,6 +117,7 @@ fun OportunidadesScreen(
                             }
                         }
 
+                        // Filtro Horizontal por Nivel de Prioridad
                         Text(
                             text = "Prioridad",
                             style = MaterialTheme.typography.labelLarge
@@ -128,8 +140,10 @@ fun OportunidadesScreen(
                             }
                         }
 
+                        // Indicador de resultados filtrados vs total
                         Text("Mostrando ${uiState.lista.size} de ${uiState.totalSinFiltrar}")
 
+                        // Botón opcional para restablecer todos los parámetros de filtrado
                         if (hayFiltros) {
                             OutlinedButton(
                                 onClick = {
@@ -142,7 +156,7 @@ fun OportunidadesScreen(
                     }
                 }
 
-                // ----- Estado vacío -----
+                // ----- MANEJO DE ESTADO VACÍO -----
                 if (uiState.lista.isEmpty()) {
                     item {
                         Text(
@@ -155,13 +169,13 @@ fun OportunidadesScreen(
                     }
                 }
 
-                // ----- Lista -----
+                // ----- RENDRERIZADO DE TARJETAS DE OPORTUNIDADES -----
                 items(uiState.lista) { oportunidad ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                onIrADetalle(oportunidad.id)
+                                onIrADetalle(oportunidad.id) // Navega al detalle pasando el ID
                             }
                     ) {
                         Column(
@@ -182,7 +196,7 @@ fun OportunidadesScreen(
                 }
             }
 
-            // Solo el ejecutivo registra oportunidades
+            // Control de Permisos en UI: Solo el Ejecutivo puede crear nuevas oportunidades
             if (!uiState.esSupervisor) {
                 Button(
                     onClick = {
@@ -194,6 +208,7 @@ fun OportunidadesScreen(
                 }
             }
 
+            // Botón para regresar al Dashboard
             OutlinedButton(
                 onClick = {
                     onVolver()
@@ -206,7 +221,9 @@ fun OportunidadesScreen(
     }
 }
 
-// Botón de filtro: se ve relleno cuando está seleccionado
+/**
+ * COMPONENTE AUXILIAR: Botón con estilo dinámico (Relleno si está activo, Delimitado si no)
+ */
 @Composable
 private fun BotonFiltro(
     texto: String,
