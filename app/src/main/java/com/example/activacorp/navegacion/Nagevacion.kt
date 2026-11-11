@@ -6,16 +6,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.activacorp.pantallas.CrearContactoScreen
-import com.example.activacorp.pantallas.CrearOportunidadScreen
-import com.example.activacorp.pantallas.CrearOrganizacionScreen
-import com.example.activacorp.pantallas.DashboardScreen
-import com.example.activacorp.pantallas.DetalleOportunidadScreen
-import com.example.activacorp.pantallas.DetalleOrganizacionScreen
-import com.example.activacorp.pantallas.EditarOportunidadScreen
-import com.example.activacorp.pantallas.LoginScreen
-import com.example.activacorp.pantallas.OportunidadesScreen
-import com.example.activacorp.pantallas.OrganizacionesScreen
+import com.example.activacorp.pantallas.contacto.CrearContactoScreen
+import com.example.activacorp.pantallas.oportunidad.CrearOportunidadScreen
+import com.example.activacorp.pantallas.organizacion.CrearOrganizacionScreen
+import com.example.activacorp.pantallas.dashboard.DashboardScreen
+import com.example.activacorp.pantallas.oportunidad.detalleOportunidad.DetalleOportunidadScreen
+import com.example.activacorp.pantallas.organizacion.detalleOrganizacion.DetalleOrganizacionScreen
+import com.example.activacorp.pantallas.oportunidad.EditarOportunidadScreen
+import com.example.activacorp.pantallas.login.LoginScreen
+import com.example.activacorp.pantallas.oportunidad.OportunidadesScreen
+import com.example.activacorp.pantallas.organizacion.OrganizacionesScreen
 
 @Composable
 fun Navegacion() {

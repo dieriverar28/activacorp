@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.oportunidad
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.activacorp.model.Organizacion
 import com.example.activacorp.model.Prioridad
 import com.example.activacorp.util.cargarImagenPrevia
 import com.example.activacorp.util.rememberCamaraLauncher
@@ -78,7 +79,7 @@ fun CrearOportunidadScreen(
 @Composable
 fun CrearOportunidadContent(
     uiState: CrearOportunidadUiState,
-    organizaciones: List<com.example.activacorp.model.Organizacion> = emptyList(),
+    organizaciones: List<Organizacion> = emptyList(),
     onNombreChange: (String) -> Unit = {},
     onTipoEventoChange: (String) -> Unit = {},
     onFechaEventoChange: (String) -> Unit = {},
@@ -373,7 +374,7 @@ fun CrearOportunidadScreenPreview() {
     CrearOportunidadContent(
         uiState = CrearOportunidadUiState(),
         organizaciones = listOf(
-            com.example.activacorp.model.Organizacion(
+            Organizacion(
                 id = 1,
                 nombre = "Empresa Ejemplo",
                 tipo = "Empresa Privada",

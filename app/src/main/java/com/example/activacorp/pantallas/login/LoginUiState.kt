@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.login
 
 data class LoginUiState(
     // Variables

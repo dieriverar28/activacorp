@@ -46,3 +46,9 @@ fun validarTelefono(telefono: String): Boolean {
     val limpio = telefono.replace(" ", "").replace("-", "")
     return Regex("^\\+?[0-9]{8,12}$").matches(limpio)
 }
+
+// Valida que el RUT tenga un formato básico válido (7 a 8 dígitos + dígito o K, con o sin puntos/guión)
+fun validarRut(rut: String): Boolean {
+    val limpio = rut.replace(".", "").replace("-", "").trim()
+    return limpio.matches(Regex("^[0-9]{7,8}[0-9kK]$"))
+}

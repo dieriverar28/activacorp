@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.oportunidad
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -18,10 +18,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,8 +36,8 @@ import com.example.activacorp.model.EstadoOportunidad
 import com.example.activacorp.model.Prioridad
 
 /**
- * PANTALLA: OportunidadesScreen (Listado General con Filtros)
- * Muestra el catálogo de oportunidades asignadas o globales según el rol del usuario logueado.
+ * PANTALLA: OportunidadesScreen (Separación de Oportunidades y Eventos)
+ * Permite alternar mediante pestañas entre el catálogo comercial de Oportunidades y el listado de Eventos agendados.
  * Incluye barra de búsqueda por texto, filtros dinámicos por Estado y Prioridad, y lista optimizada con LazyColumn.
  */
 @Preview
@@ -47,6 +52,9 @@ fun OportunidadesScreen(
     // Sincronización del estado UI reactivo según el ciclo de vida
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Estado local para alternar entre las pestañas (0: Oportunidades, 1: Eventos)
+    var pestanaSeleccionada by remember { mutableIntStateOf(0) }
+
     // Determina si hay algún filtro activo para mostrar el botón de limpieza
     val hayFiltros = uiState.busqueda.isNotBlank() ||
             uiState.filtroEstado != null ||
@@ -56,9 +64,8 @@ fun OportunidadesScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Título adaptativo según el perfil del usuario activo
                     Text(
-                        if (uiState.esSupervisor) "Todas las oportunidades" else "Mis oportunidades"
+                        if (uiState.esSupervisor) "Gestión del Sistema" else "Mis Registros"
                     )
                 }
             )
@@ -71,6 +78,19 @@ fun OportunidadesScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // ----- PESTAÑAS DE SEPARACIÓN: OPORTUNIDADES VS EVENTOS -----
+            TabRow(selectedTabIndex = pestanaSeleccionada) {
+                Tab(
+                    selected = pestanaSeleccionada == 0,
+                    onClick = { pestanaSeleccionada = 0 },
+                    text = { Text("💼 Oportunidades (${uiState.lista.size})") }
+                )
+                Tab(
+                    selected = pestanaSeleccionada == 1,
+                    onClick = { pestanaSeleccionada = 1 },
+                    text = { Text("📅 Eventos (${uiState.lista.size})") }
+                )
+            }
 
             // Componente de lista perezosa (LazyColumn) para reciclaje de vistas eficiente
             LazyColumn(
@@ -78,7 +98,7 @@ fun OportunidadesScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
-                // ----- SECCIÓN DE BÚSQUEDA Y FILTROS DIVERSIFICADOS -----
+                // ----- SECCIÓN DE BÚSQUEDA Y FILTROS -----
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         // Campo de texto para búsqueda en tiempo real
@@ -88,55 +108,61 @@ fun OportunidadesScreen(
                                 viewModel.cambiarBusqueda(it)
                             },
                             label = {
-                                Text("Buscar por nombre, organización o comuna")
+                                Text(
+                                    if (pestanaSeleccionada == 0)
+                                        "Buscar por nombre, organización o comuna"
+                                    else
+                                        "Buscar por tipo de evento, comuna o lugar"
+                                )
                             },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Filtro Horizontal por Estado de Oportunidad
-                        Text(
-                            text = "Estado",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BotonFiltro(
-                                texto = "Todos",
-                                seleccionado = uiState.filtroEstado == null,
-                                onClick = { viewModel.seleccionarEstado(null) }
+                        // Filtros por Estado y Prioridad (visibles principalmente en vista Oportunidades)
+                        if (pestanaSeleccionada == 0) {
+                            Text(
+                                text = "Estado",
+                                style = MaterialTheme.typography.labelLarge
                             )
-                            EstadoOportunidad.entries.forEach { estado ->
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 BotonFiltro(
-                                    texto = estado.etiqueta,
-                                    seleccionado = uiState.filtroEstado == estado,
-                                    onClick = { viewModel.seleccionarEstado(estado) }
+                                    texto = "Todos",
+                                    seleccionado = uiState.filtroEstado == null,
+                                    onClick = { viewModel.seleccionarEstado(null) }
                                 )
+                                EstadoOportunidad.entries.forEach { estado ->
+                                    BotonFiltro(
+                                        texto = estado.etiqueta,
+                                        seleccionado = uiState.filtroEstado == estado,
+                                        onClick = { viewModel.seleccionarEstado(estado) }
+                                    )
+                                }
                             }
-                        }
 
-                        // Filtro Horizontal por Nivel de Prioridad
-                        Text(
-                            text = "Prioridad",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BotonFiltro(
-                                texto = "Todas",
-                                seleccionado = uiState.filtroPrioridad == null,
-                                onClick = { viewModel.seleccionarPrioridad(null) }
+                            Text(
+                                text = "Prioridad",
+                                style = MaterialTheme.typography.labelLarge
                             )
-                            Prioridad.entries.forEach { prioridad ->
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 BotonFiltro(
-                                    texto = prioridad.etiqueta,
-                                    seleccionado = uiState.filtroPrioridad == prioridad,
-                                    onClick = { viewModel.seleccionarPrioridad(prioridad) }
+                                    texto = "Todas",
+                                    seleccionado = uiState.filtroPrioridad == null,
+                                    onClick = { viewModel.seleccionarPrioridad(null) }
                                 )
+                                Prioridad.entries.forEach { prioridad ->
+                                    BotonFiltro(
+                                        texto = prioridad.etiqueta,
+                                        seleccionado = uiState.filtroPrioridad == prioridad,
+                                        onClick = { viewModel.seleccionarPrioridad(prioridad) }
+                                    )
+                                }
                             }
                         }
 
@@ -161,15 +187,16 @@ fun OportunidadesScreen(
                     item {
                         Text(
                             if (uiState.totalSinFiltrar == 0) {
-                                "Aún no hay oportunidades registradas"
+                                if (pestanaSeleccionada == 0) "Aún no hay oportunidades registradas"
+                                else "Aún no hay eventos registrados"
                             } else {
-                                "No hay oportunidades que coincidan con los filtros"
+                                "No hay registros que coincidan con los filtros"
                             }
                         )
                     }
                 }
 
-                // ----- RENDRERIZADO DE TARJETAS DE OPORTUNIDADES -----
+                // ----- RENDERIZADO DIFERENCIADO SEGÚN PESTAÑA -----
                 items(uiState.lista) { oportunidad ->
                     Card(
                         modifier = Modifier
@@ -180,17 +207,30 @@ fun OportunidadesScreen(
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
-                                text = oportunidad.nombre,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(oportunidad.organizacionNombre)
-                            Text("Estado: ${EstadoOportunidad.valueOf(oportunidad.estado).etiqueta}")
-                            Text("Prioridad: ${Prioridad.valueOf(oportunidad.prioridad).etiqueta}")
-                            Text("Fecha del evento: ${oportunidad.fechaEvento}")
-                            Text("Responsable: ${oportunidad.responsableNombre ?: "Sin asignar"}")
+                            if (pestanaSeleccionada == 0) {
+                                // VISTA PESTAÑA OPORTUNIDADES (Comercial / Negocio)
+                                Text(
+                                    text = oportunidad.nombre,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text("Organización: ${oportunidad.organizacionNombre}")
+                                Text("Estado: ${EstadoOportunidad.valueOf(oportunidad.estado).etiqueta}")
+                                Text("Prioridad: ${Prioridad.valueOf(oportunidad.prioridad).etiqueta}")
+                                Text("Responsable: ${oportunidad.responsableNombre ?: "Sin asignar"}")
+                            } else {
+                                // VISTA PESTAÑA EVENTOS (Agendamiento / Logística)
+                                Text(
+                                    text = "📌 ${oportunidad.tipoEvento}",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text("Oportunidad: ${oportunidad.nombre}")
+                                Text("📅 Fecha del evento: ${oportunidad.fechaEvento}")
+                                Text("📍 Ubicación: ${oportunidad.ubicacion}, ${oportunidad.comuna}")
+                                Text("👥 Público estimado: ${oportunidad.publicoEsperado} personas")
+                                Text("Organización: ${oportunidad.organizacionNombre}")
+                            }
                         }
                     }
                 }

@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.dashboard
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
