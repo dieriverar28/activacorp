@@ -1,10 +1,9 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.oportunidad.detalleOportunidad
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.activacorp.model.EstadoOportunidad
 import com.example.activacorp.model.Prioridad
+import com.example.activacorp.model.Usuario
 import com.example.activacorp.ui.IndicadorEstadoAnimado
 import com.example.activacorp.ui.MensajeAlertaAnimado
 import com.example.activacorp.util.cargarImagenPrevia
@@ -76,7 +76,7 @@ fun DetalleOportunidadScreen(
 fun DetalleOportunidadContent(
     uiState: DetalleUiState,
     onCambiarEstado: (EstadoOportunidad) -> Unit = {},
-    onAsignar: (com.example.activacorp.model.Usuario) -> Unit = {},
+    onAsignar: (Usuario) -> Unit = {},
     onAgregarGestion: (tipo: String, descripcion: String, fechaProximo: String) -> Unit = { _, _, _ -> },
     onIrAEditar: () -> Unit = {},
     onVolver: () -> Unit = {}

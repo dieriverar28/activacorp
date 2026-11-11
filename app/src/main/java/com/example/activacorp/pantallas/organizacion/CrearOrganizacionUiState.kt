@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.organizacion
 
 data class CrearOrganizacionUiState(
     // Variables

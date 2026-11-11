@@ -1,6 +1,5 @@
 package com.example.activacorp.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -13,46 +12,72 @@ import androidx.compose.ui.platform.LocalContext
 
 /**
  * ESQUEMA DE COLORES: Modo Oscuro (DarkColorScheme)
- * Define las paletas de color secundarias para interfaces en entornos con poca luz.
+ * Paleta Verde Menta + Naranja Coral para modo oscuro.
  */
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = PrimaryEmeraldDark,
+    onPrimary = OnPrimaryEmeraldDark,
+    primaryContainer = PrimaryContainerEmeraldDark,
+    onPrimaryContainer = OnPrimaryContainerEmeraldDark,
+
+    secondary = SecondaryCoralDark,
+    onSecondary = OnSecondaryCoralDark,
+    secondaryContainer = SecondaryContainerCoralDark,
+    onSecondaryContainer = OnSecondaryContainerCoralDark,
+
+    tertiary = TertiaryPurpleDark,
+    onTertiary = OnTertiaryPurpleDark,
+    tertiaryContainer = TertiaryContainerPurpleDark,
+    onTertiaryContainer = OnTertiaryContainerPurpleDark,
+
+    background = BackgroundDark,
+    onBackground = OnBackgroundDark,
+    surface = SurfaceDark,
+    onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    error = StateError
 )
 
 /**
  * ESQUEMA DE COLORES: Modo Claro (LightColorScheme)
- * Define las paletas de color estándar según Material Design 3.
+ * Paleta corporativa ActivaCorp (Verde Esmeralda + Naranja Coral + Violeta).
  */
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = PrimaryEmerald,
+    onPrimary = OnPrimaryEmerald,
+    primaryContainer = PrimaryContainerEmerald,
+    onPrimaryContainer = OnPrimaryContainerEmerald,
 
-    /* Otros colores opcionales configurables según la identidad de marca:
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondary = SecondaryCoral,
+    onSecondary = OnSecondaryCoral,
+    secondaryContainer = SecondaryContainerCoral,
+    onSecondaryContainer = OnSecondaryContainerCoral,
+
+    tertiary = TertiaryPurple,
+    onTertiary = OnTertiaryPurple,
+    tertiaryContainer = TertiaryContainerPurple,
+    onTertiaryContainer = OnTertiaryContainerPurple,
+
+    background = BackgroundLight,
+    onBackground = OnBackgroundLight,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    error = StateError
 )
 
 /**
  * TEMA DE LA APLICACIÓN: ActivacorpTheme (Material Design 3)
- * Envuelve el contenido de la aplicación para aplicar estilos, colores dinámicos (Android 12+)
- * y tipografías personalizadas globales.
+ * Aplica la identidad de marca personalizada de ActivaCorp (o colores dinámicos si se especifica).
  */
 @Composable
 fun ActivacorpTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(), // Detecta automáticamente el modo oscuro del sistema
-    dynamicColor: Boolean = true,              // Habilita colores dinámicos en Android 12+ (API 31+)
-    content: @Composable () -> Unit             // Contenido de la UI que heredará el estilo
+    darkTheme: Boolean = isSystemInDarkTheme(), // Detecta el modo oscuro del sistema
+    dynamicColor: Boolean = false,             // Deshabilitado para forzar el tema verde esmeralda + coral de la marca
+    content: @Composable () -> Unit
 ) {
-    // Selección dinámica de la paleta de colores según la versión de Android y la preferencia de tema
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
@@ -63,7 +88,6 @@ fun ActivacorpTheme(
         else -> LightColorScheme
     }
 
-    // Inyección global de la configuración de MaterialTheme en Compose
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,

@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -68,14 +68,14 @@ fun DashboardScreen(
             )
             Text(uiState.rolEtiqueta)
 
-            // Tarjeta Informativa (Resumen de Métricas)
+            // Tarjetas Informativas (Resumen Separado: Oportunidades vs Eventos)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "Resumen",
+                        text = "💼 Oportunidades Comerciales",
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -84,12 +84,23 @@ fun DashboardScreen(
                         Text("Oportunidades totales: ${uiState.total}")
                         Text("Sin responsable asignado: ${uiState.sinAsignar}")
                         Text("Pendientes de tu decisión: ${uiState.enEspera}")
-                        Text("Eventos próximos: ${uiState.proximas}")
                     } else {
-                        Text("Mis oportunidades: ${uiState.total}")
-                        Text("Eventos próximos: ${uiState.proximas}")
+                        Text("Mis oportunidades activas: ${uiState.total}")
                         Text("En espera de respuesta: ${uiState.enEspera}")
                     }
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "📅 Eventos Próximos",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text("Eventos programados: ${uiState.proximas}")
                 }
             }
 

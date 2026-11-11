@@ -2,8 +2,12 @@ package com.example.activacorp.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.activacorp.ui.theme.StateError
@@ -81,5 +86,71 @@ fun IndicadorEstadoAnimado(
             color = Color.White,
             style = MaterialTheme.typography.labelMedium
         )
+    }
+}
+
+/**
+ * ANIMACIÓN 4 (Mecanismo 3: Expansión de contenido con AnimatedVisibility + expandVertically)
+ * Muestra u oculta secciones secundarias (como detalles adicionales o formularios desplegables)
+ * con una animación combinada de expansión vertical y desvanecimiento.
+ */
+@Composable
+fun ContenidoDesplegableAnimado(
+    visible: Boolean,                  // Controla si el contenido desplegable se muestra
+    content: @Composable () -> Unit    // Contenido visual que se expandirá o contraerá
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + expandVertically(),  // Expansión suave hacia abajo
+        exit = fadeOut() + shrinkVertically()   // Contracción suave hacia arriba
+    ) {
+        content()
+    }
+}
+
+/**
+ * ANIMACIÓN 5 (Mecanismo 4: Opacidad animada con animateFloatAsState)
+ * Anima la transparencia/opacidad de un elemento cuando se habilita o inhabilita,
+ * proporcionando una transición suave en lugar de un cambio brusco.
+ */
+@Composable
+fun OpacidadEstadoAnimada(
+    activo: Boolean,                   // Define si el elemento está activo (opacidad 1.0) o inactivo (opacidad 0.4)
+    content: @Composable () -> Unit    // Contenido sobre el cual se aplicará el efecto de opacidad
+) {
+    // Anima la opacidad (alpha) entre 1.0f (activo) y 0.4f (inactivo)
+    val alphaAnimado by animateFloatAsState(
+        targetValue = if (activo) 1.0f else 0.4f,
+        label = "TransicionOpacidad"
+    )
+
+    Box(
+        modifier = Modifier.alpha(alphaAnimado)
+    ) {
+        content()
+    }
+}
+
+/**
+ * ANIMACIÓN 6 (Mecanismo 5: Desplazamiento/Padding animado con animateDpAsState)
+ * Transiciona suavemente el margen/espaciado de un elemento al ser seleccionado o activado.
+ */
+@Composable
+fun TarjetaSeleccionadaAnimada(
+    seleccionada: Boolean,              // Define si la tarjeta está seleccionada
+    content: @Composable () -> Unit     // Contenido de la tarjeta
+) {
+    // Anima el padding interno entre 8.dp (normal) y 16.dp (destacado/seleccionado)
+    val paddingAnimado by animateDpAsState(
+        targetValue = if (seleccionada) 16.dp else 8.dp,
+        label = "TransicionPaddingTarjeta"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(paddingAnimado)
+    ) {
+        content()
     }
 }

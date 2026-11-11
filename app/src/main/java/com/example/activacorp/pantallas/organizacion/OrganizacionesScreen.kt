@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.organizacion
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
