@@ -1,4 +1,4 @@
-package com.example.activacorp.pantallas
+package com.example.activacorp.pantallas.contacto
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,7 +21,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.activacorp.pantallas.contacto.CrearContactoViewModel
 
 /**
  * PANTALLA: CrearContactoScreen (Contenedor de Estado / Stateful Composable)
