@@ -1,43 +1,37 @@
 package com.example.activacorp.pantallas.oportunidad
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.activacorp.data.AppDatabase
-import com.example.activacorp.data.OportunidadRepository
+import com.example.activacorp.domain.usecase.ActivacorpUseCases
 import com.example.activacorp.model.EstadoOportunidad
 import com.example.activacorp.model.OportunidadConDatos
 import com.example.activacorp.model.Prioridad
 import com.example.activacorp.model.Rol
 import com.example.activacorp.model.obtenerRol
 import com.example.activacorp.util.Sesion
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
- * ESTADO DE LA UI: OportunidadesUiState
- * Representa el estado inmutable consumido por OportunidadesScreen.
- * Contiene la lista de oportunidades filtrada, las métricas totales y los criterios de búsqueda activos.
+ * Estado de la UI: lista ya filtrada + criterios + estado de la carga.
  */
 data class OportunidadesUiState(
-    val lista: List<OportunidadConDatos> = emptyList(), // Lista procesada y filtrada
-    val totalSinFiltrar: Int = 0,                       // Total de elementos devueltos por Room
-    val esSupervisor: Boolean = false,                  // Identifica si el usuario es supervisor
-    val busqueda: String = "",                         // Texto de búsqueda ingresado
-    val filtroEstado: EstadoOportunidad? = null,        // Estado seleccionado para filtrar
-    val filtroPrioridad: Prioridad? = null              // Nivel de prioridad seleccionado
+    val lista: List<OportunidadConDatos> = emptyList(),
+    val totalSinFiltrar: Int = 0,
+    val esSupervisor: Boolean = false,
+    val busqueda: String = "",
+    val filtroEstado: EstadoOportunidad? = null,
+    val filtroPrioridad: Prioridad? = null,
+    val cargando: Boolean = false,
+    val mensajeError: String? = null
 )
 
-/**
- * ESTRUCTURA INTERNA: Filtros
- * Representa los criterios seleccionados por el usuario en la interfaz.
- */
 private data class Filtros(
     val busqueda: String = "",
     val estado: EstadoOportunidad? = null,
@@ -45,57 +39,41 @@ private data class Filtros(
 )
 
 /**
- * VIEWMODEL: OportunidadesViewModel (Lógica de Búsqueda y Filtrado)
- * Combina en tiempo real el flujo de datos proveniente de Room con las preferencias
- * de filtrado aplicadas por el usuario utilizando Kotlin Coroutines y StateFlow.
+ * Consume GET /oportunidades?usuarioId=...
+ * El filtrado por texto/estado/prioridad se sigue haciendo en memoria, igual que antes.
+ * Como la API no es reactiva, se debe llamar a recargar() al volver a la pantalla.
  */
 class OportunidadesViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    private val casos: ActivacorpUseCases = ActivacorpUseCases()
+) : ViewModel() {
 
-    // Instancia de la base de datos local y su repositorio
-    private val database = AppDatabase.getInstance(application)
-    private val repository = OportunidadRepository(
-        database.oportunidadDao(),
-        database.seguimientoDao()
-    )
-
-    // Datos del usuario en sesión y verificación del rol
     private val usuario = Sesion.usuario.value
     private val esSupervisor = usuario?.obtenerRol() == Rol.SUPERVISOR
 
-    // Flujo de origen de datos desde Room (filtrado a nivel de BD según permisos del usuario)
-    private val fuente: Flow<List<OportunidadConDatos>> =
-        if (usuario != null) {
-            repository.observarParaUsuario(usuario)
-        } else {
-            flowOf(emptyList())
-        }
-
-    // Estado reactivo privado con los filtros aplicados en UI
+    private val _lista = MutableStateFlow<List<OportunidadConDatos>>(emptyList())
     private val _filtros = MutableStateFlow(Filtros())
+    private val _cargando = MutableStateFlow(true)
+    private val _mensajeError = MutableStateFlow<String?>(null)
 
-    /**
-     * Estado UI expuesto de forma reactiva.
-     * Utiliza el operador `combine` para aplicar las reglas de filtrado en tiempo real
-     * cada vez que cambia la fuente de Room o los criterios ingresados por el usuario.
-     */
-    val uiState: StateFlow<OportunidadesUiState> = combine(fuente, _filtros) { lista, filtros ->
+    private var cargandoAhora = false
+
+    val uiState: StateFlow<OportunidadesUiState> = combine(
+        _lista,
+        _filtros,
+        _cargando,
+        _mensajeError
+    ) { lista, filtros, cargando, mensajeError ->
         val texto = filtros.busqueda.trim()
 
-        // Filtrado en memoria de la colección reactiva
         val filtrada = lista.filter { oportunidad ->
-            // Búsqueda por coincidencia de texto en múltiples campos (Nombre, Organización o Comuna)
             val coincideTexto = texto.isEmpty() ||
                     oportunidad.nombre.contains(texto, ignoreCase = true) ||
                     oportunidad.organizacionNombre.contains(texto, ignoreCase = true) ||
                     oportunidad.comuna.contains(texto, ignoreCase = true)
 
-            // Evaluación del filtro por estado
             val coincideEstado = filtros.estado == null ||
                     oportunidad.estado == filtros.estado.name
 
-            // Evaluación del filtro por prioridad
             val coincidePrioridad = filtros.prioridad == null ||
                     oportunidad.prioridad == filtros.prioridad.name
 
@@ -108,38 +86,59 @@ class OportunidadesViewModel(
             esSupervisor = esSupervisor,
             busqueda = filtros.busqueda,
             filtroEstado = filtros.estado,
-            filtroPrioridad = filtros.prioridad
+            filtroPrioridad = filtros.prioridad,
+            cargando = cargando,
+            mensajeError = mensajeError
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Retiene la suscripción 5 segundos tras pausar la vista
-        initialValue = OportunidadesUiState(esSupervisor = esSupervisor)
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = OportunidadesUiState(esSupervisor = esSupervisor, cargando = true)
     )
 
-    /**
-     * Actualiza el texto de búsqueda en tiempo real.
-     */
+    init {
+        recargar()
+    }
+
+    fun recargar() {
+        val actual = Sesion.usuario.value ?: return
+
+        if (cargandoAhora) return
+        cargandoAhora = true
+
+        viewModelScope.launch {
+            _cargando.value = true
+
+            try {
+                _lista.value = casos.oportunidades(actual.id)
+                _mensajeError.value = null
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                _mensajeError.value = e.message
+                    ?: "No se pudieron cargar las oportunidades."
+
+            } finally {
+                _cargando.value = false
+                cargandoAhora = false
+            }
+        }
+    }
+
     fun cambiarBusqueda(texto: String) {
         _filtros.update { it.copy(busqueda = texto) }
     }
 
-    /**
-     * Selecciona o desselecciona el filtro por estado (null limpia el filtro).
-     */
     fun seleccionarEstado(estado: EstadoOportunidad?) {
         _filtros.update { it.copy(estado = estado) }
     }
 
-    /**
-     * Selecciona o desselecciona el filtro por prioridad (null limpia el filtro).
-     */
     fun seleccionarPrioridad(prioridad: Prioridad?) {
         _filtros.update { it.copy(prioridad = prioridad) }
     }
 
-    /**
-     * Restablece todos los criterios de filtrado a sus valores iniciales.
-     */
     fun limpiarFiltros() {
         _filtros.value = Filtros()
     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -150,6 +151,14 @@ fun CrearContactoContent(
             )
 
             // Botón de Acción Principal: Confirmar y Guardar
+            if (uiState.mensajeError != null) {
+                Text(
+                    text = uiState.mensajeError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             Button(
                 onClick = onGuardar,
                 modifier = Modifier.fillMaxWidth()

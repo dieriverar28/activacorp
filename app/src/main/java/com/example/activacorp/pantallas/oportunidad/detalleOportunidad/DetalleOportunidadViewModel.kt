@@ -1,12 +1,9 @@
 package com.example.activacorp.pantallas.oportunidad.detalleOportunidad
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.activacorp.data.AppDatabase
-import com.example.activacorp.data.OportunidadRepository
-import com.example.activacorp.data.UsuarioRepository
+import com.example.activacorp.domain.usecase.ActivacorpUseCases
 import com.example.activacorp.model.EstadoOportunidad
 import com.example.activacorp.model.OportunidadConDatos
 import com.example.activacorp.model.Rol
@@ -16,6 +13,7 @@ import com.example.activacorp.model.obtenerRol
 import com.example.activacorp.util.Sesion
 import com.example.activacorp.util.estadosSiguientes
 import com.example.activacorp.util.puedeGestionar
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,72 +21,67 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/**
- * ESTADO DE LA UI: DetalleUiState
- * Representa la información requerida en la pantalla de detalle de una oportunidad.
- * Contiene el objeto de datos, el historial de gestiones, los estados permitidos según el rol y flags de control.
- */
 data class DetalleUiState(
-    val cargando: Boolean = true,                          // Indica si la consulta a Room está en ejecución
-    val detalle: OportunidadConDatos? = null,             // Datos de la oportunidad con nombres de relación
-    val historial: List<SeguimientoDetalle> = emptyList(), // Lista de seguimientos/gestiones registradas
-    val ejecutivos: List<Usuario> = emptyList(),           // Lista de ejecutivos disponibles para asignación
-    val estadosPermitidos: List<EstadoOportunidad> = emptyList(), // Transiciones válidas según rol y estado actual
-    val esSupervisor: Boolean = false,                     // Flag que identifica si el usuario es supervisor
-    val tieneAcceso: Boolean = false,                      // Control de seguridad según asignación o rol
-    val mensaje: String? = null                            // Feedback visual de confirmación o error
+    val cargando: Boolean = true,
+    val detalle: OportunidadConDatos? = null,
+    val historial: List<SeguimientoDetalle> = emptyList(),
+    val ejecutivos: List<Usuario> = emptyList(),
+    val estadosPermitidos: List<EstadoOportunidad> = emptyList(),
+    val esSupervisor: Boolean = false,
+    val tieneAcceso: Boolean = false,
+    val mensaje: String? = null
 )
 
 /**
- * VIEWMODEL: DetalleOportunidadViewModel (Lógica de Detalle, Permisos e Historial)
- * Combina múltiples flujos de datos (Room) mediante corrutinas y StateFlow para evaluar
- * los permisos de acceso, las transiciones de estado válidas y la reasignación de ejecutivos.
+ * Consume:
+ *  - GET /oportunidades/{id}
+ *  - GET /oportunidades/{id}/seguimientos
+ *  - GET /usuarios/ejecutivos (solo si el usuario es supervisor)
+ * Y muta con:
+ *  - PUT /oportunidades/{id}/estado
+ *  - PUT /oportunidades/{id}/asignacion
+ *
+ * Los permisos/transiciones se siguen calculando con util/Permisos para decidir
+ * qué botones mostrar. La API vuelve a validar y responde 403/409 si corresponde.
  */
 class DetalleOportunidadViewModel(
-    application: Application,
-    savedStateHandle: SavedStateHandle // Permite extraer argumentos de la ruta de navegación Compose
-) : AndroidViewModel(application) {
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
-    // Identificador único de la oportunidad recuperado desde la ruta ("detalle/{id}")
     private val oportunidadId: Int = savedStateHandle.get<Int>("id") ?: 0
+    private val casos = ActivacorpUseCases()
 
-    // Instancia de la base de datos local y repositorios de datos
-    private val database = AppDatabase.getInstance(application)
-    private val repository = OportunidadRepository(
-        database.oportunidadDao(),
-        database.seguimientoDao()
-    )
-    private val usuarioRepository = UsuarioRepository(database.usuarioDao())
-
-    // Estado interno para almacenar mensajes emergentes o notificaciones en pantalla
+    private val _detalle = MutableStateFlow<OportunidadConDatos?>(null)
+    private val _historial = MutableStateFlow<List<SeguimientoDetalle>>(emptyList())
+    private val _ejecutivos = MutableStateFlow<List<Usuario>>(emptyList())
     private val _mensaje = MutableStateFlow<String?>(null)
+    private val _cargando = MutableStateFlow(true)
 
-    /**
-     * Flujo reactivo StateFlow que combina los datos de la oportunidad, el historial de gestiones,
-     * la lista de ejecutivos y el estado de mensajes. Evalúa los permisos de acceso en tiempo real.
-     */
+    private var cargandoAhora = false
+
     val uiState: StateFlow<DetalleUiState> = combine(
-        repository.observarDetalle(oportunidadId),
-        repository.observarHistorial(oportunidadId),
-        usuarioRepository.observarEjecutivos(),
-        _mensaje
-    ) { detalle, historial, ejecutivos, mensaje ->
+        _detalle,
+        _historial,
+        _ejecutivos,
+        _mensaje,
+        _cargando
+    ) { detalle, historial, ejecutivos, mensaje, cargando ->
         val usuario = Sesion.usuario.value
         val rol = usuario?.obtenerRol()
 
-        // Regla de seguridad: Un ejecutivo solo puede gestionar sus oportunidades asignadas (el supervisor tiene acceso global)
         val acceso = usuario != null && detalle != null &&
                 puedeGestionar(usuario, detalle.responsableId)
 
-        // Cálculo de transiciones de estado permitidas según la máquina de estados del sistema
-        val permitidos = if (acceso && rol != null && detalle != null) {
-            estadosSiguientes(EstadoOportunidad.valueOf(detalle.estado), rol)
-        } else {
-            emptyList()
-        }
+        val permitidos = detalle?.let { oportunidad ->
+            if (!acceso || rol == null) {
+                emptyList()
+            } else {
+                estadosSiguientes(EstadoOportunidad.valueOf(oportunidad.estado), rol)
+            }
+        } ?: emptyList()
 
         DetalleUiState(
-            cargando = false,
+            cargando = cargando,
             detalle = detalle,
             historial = historial,
             ejecutivos = ejecutivos,
@@ -99,40 +92,86 @@ class DetalleOportunidadViewModel(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Mantiene activo el flujo 5 segundos tras cambiar de vista
+        started = SharingStarted.WhileSubscribed(5000),
         initialValue = DetalleUiState()
     )
 
-    /**
-     * Transiciona la oportunidad al siguiente estado válido según el flujo de negocio,
-     * registrando el evento correspondiente en el historial de Room.
-     */
-    fun cambiarEstado(nuevoEstado: EstadoOportunidad) {
-        val usuario = Sesion.usuario.value ?: return
+    init {
+        recargar()
+    }
+
+    fun recargar() {
+        if (oportunidadId == 0 || cargandoAhora) return
+        cargandoAhora = true
 
         viewModelScope.launch {
-            val exito = repository.cambiarEstado(oportunidadId, nuevoEstado, usuario)
-            _mensaje.value = if (exito) {
-                "Estado actualizado a: ${nuevoEstado.etiqueta}"
-            } else {
-                "No tienes permiso para realizar este cambio"
+            _cargando.value = true
+
+            try {
+                _detalle.value = casos.oportunidad(oportunidadId)
+                _historial.value = casos.seguimientos(oportunidadId)
+
+                val usuario = Sesion.usuario.value
+                _ejecutivos.value = if (usuario?.obtenerRol() == Rol.SUPERVISOR) {
+                    casos.ejecutivos()
+                } else {
+                    emptyList()
+                }
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                _mensaje.value = e.message
+                    ?: "No se pudo cargar la oportunidad."
+
+            } finally {
+                _cargando.value = false
+                cargandoAhora = false
             }
         }
     }
 
-    /**
-     * Reasigna la oportunidad a un ejecutivo comercial específico (Función exclusiva del Rol Supervisor).
-     */
+    fun cambiarEstado(nuevoEstado: EstadoOportunidad) {
+        val usuario = Sesion.usuario.value ?: return
+
+        viewModelScope.launch {
+            try {
+                casos.cambiarEstado(oportunidadId, usuario.id, nuevoEstado.name)
+                _mensaje.value = "Estado actualizado a: ${nuevoEstado.etiqueta}"
+                recargar()
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                // Aquí aparece el 409 de la API: "Transición no permitida: ..."
+                _mensaje.value = e.message
+                    ?: "No se pudo cambiar el estado."
+            }
+        }
+    }
+
     fun asignar(ejecutivo: Usuario) {
         val usuario = Sesion.usuario.value ?: return
 
         viewModelScope.launch {
-            val exito = repository.asignar(oportunidadId, ejecutivo, usuario)
-            _mensaje.value = if (exito) {
-                "Oportunidad asignada a ${ejecutivo.nombre}"
-            } else {
-                "No se pudo asignar la oportunidad"
+            try {
+                casos.asignar(oportunidadId, usuario.id, ejecutivo.id)
+                _mensaje.value = "Oportunidad asignada a ${ejecutivo.nombre}"
+                recargar()
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                _mensaje.value = e.message
+                    ?: "No se pudo asignar la oportunidad."
             }
         }
+    }
+
+    fun limpiarMensaje() {
+        _mensaje.value = null
     }
 }

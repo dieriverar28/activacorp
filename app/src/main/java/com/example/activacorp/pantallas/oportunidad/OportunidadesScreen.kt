@@ -23,6 +23,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,11 @@ fun OportunidadesScreen(
 ) {
     // Sincronización del estado UI reactivo según el ciclo de vida
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // La API no es reactiva: recarga al entrar o volver a esta pantalla
+    LaunchedEffect(Unit) {
+        viewModel.recargar()
+    }
 
     // Estado local para alternar entre las pestañas (0: Oportunidades, 1: Eventos)
     var pestanaSeleccionada by remember { mutableIntStateOf(0) }

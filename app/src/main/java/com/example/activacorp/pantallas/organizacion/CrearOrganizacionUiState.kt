@@ -10,5 +10,8 @@ data class CrearOrganizacionUiState(
     var errorNombre: Boolean = false,
     var errorNombreDuplicado: Boolean = false,
     var errorTipo: Boolean = false,
-    var errorComuna: Boolean = false
+    var errorComuna: Boolean = false,
+
+    // Mensaje de error de red o de la API
+    var mensajeError: String? = null
 )

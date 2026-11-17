@@ -1,64 +1,75 @@
 package com.example.activacorp.pantallas.organizacion.detalleOrganizacion
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.activacorp.data.AppDatabase
-import com.example.activacorp.data.ContactoRepository
-import com.example.activacorp.data.OrganizacionRepository
+import com.example.activacorp.domain.usecase.ActivacorpUseCases
 import com.example.activacorp.model.Contacto
 import com.example.activacorp.model.Organizacion
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-/**
- * ESTADO DE LA UI: DetalleOrganizacionUiState
- * Representa la estructura inmutable que contiene la información de la organización solicitada
- * y el listado dinámico de contactos corporativos vinculados a ella.
- */
 data class DetalleOrganizacionUiState(
-    val cargando: Boolean = true,             // Flag que indica si los datos están consultándose en Room
-    val organizacion: Organizacion? = null,   // Ficha técnica de la organización seleccionada
-    val contactos: List<Contacto> = emptyList() // Colección de contactos pertenecientes a esta organización
+    val cargando: Boolean = true,
+    val organizacion: Organizacion? = null,
+    val contactos: List<Contacto> = emptyList(),
+    val mensajeError: String? = null
 )
 
 /**
- * VIEWMODEL: DetalleOrganizacionViewModel (Lógica de Consulta y Estado)
- * Recupera el identificador enviado mediante la navegación Compose y combina en tiempo real
- * la consulta de la entidad Organización con su lista de contactos asociados desde Room.
+ * Consume:
+ *  - GET /organizaciones/{id}
+ *  - GET /organizaciones/{id}/contactos
  */
 class DetalleOrganizacionViewModel(
-    application: Application,
-    savedStateHandle: SavedStateHandle // Permite extraer argumentos de la ruta de navegación ("organizacion/{id}")
-) : AndroidViewModel(application) {
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
-    // Identificador único de la organización recuperado desde los argumentos de la ruta
     private val organizacionId: Int = savedStateHandle.get<Int>("id") ?: 0
+    private val casos = ActivacorpUseCases()
 
-    // Instancia de la base de datos local y sus repositorios correspondientes
-    private val database = AppDatabase.getInstance(application)
-    private val organizacionRepository = OrganizacionRepository(database.organizacionDao())
-    private val contactoRepository = ContactoRepository(database.contactoDao())
+    private val _uiState = MutableStateFlow(DetalleOrganizacionUiState())
+    val uiState: StateFlow<DetalleOrganizacionUiState> = _uiState.asStateFlow()
 
-    /**
-     * Flujo de estado inmutable (StateFlow) que combina de forma reactiva la información
-     * de la organización y sus contactos. Actualiza automáticamente la UI si se añade un nuevo contacto.
-     */
-    val uiState: StateFlow<DetalleOrganizacionUiState> = combine(
-        organizacionRepository.observarPorId(organizacionId),
-        contactoRepository.observarPorOrganizacion(organizacionId)
-    ) { organizacion, contactos ->
-        DetalleOrganizacionUiState(
-            cargando = false,
-            organizacion = organizacion,
-            contactos = contactos
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Mantiene la suscripción activa por 5 segundos al pausar la vista
-        initialValue = DetalleOrganizacionUiState()
-    )
+    private var cargandoAhora = false
+
+    init {
+        recargar()
+    }
+
+    fun recargar() {
+        if (organizacionId == 0 || cargandoAhora) return
+        cargandoAhora = true
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(cargando = true, mensajeError = null)
+
+            try {
+                val organizacion = casos.organizacion(organizacionId)
+                val contactos = casos.contactos(organizacionId)
+
+                _uiState.value = DetalleOrganizacionUiState(
+                    cargando = false,
+                    organizacion = organizacion,
+                    contactos = contactos
+                )
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    cargando = false,
+                    mensajeError = e.message
+                        ?: "No se pudo cargar la organización."
+                )
+
+            } finally {
+                cargandoAhora = false
+            }
+        }
+    }
 }

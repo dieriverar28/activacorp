@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,11 @@ fun DashboardScreen(
 ) {
     // Sincronización del estado de UI respetando el ciclo de vida de Compose
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // La API no es reactiva: recarga al entrar o volver al panel
+    LaunchedEffect(Unit) {
+        viewModel.recargar()
+    }
 
     // Estructura contenedora base Material Design 3
     Scaffold(

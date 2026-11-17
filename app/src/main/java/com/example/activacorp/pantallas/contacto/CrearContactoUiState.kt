@@ -12,5 +12,8 @@ data class CrearContactoUiState(
     var errorCargo: Boolean = false,
     var errorCorreo: Boolean = false,
     var errorCorreoDuplicado: Boolean = false,
-    var errorTelefono: Boolean = false
+    var errorTelefono: Boolean = false,
+
+    // Mensaje de error de red o de la API
+    var mensajeError: String? = null
 )

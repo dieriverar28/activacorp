@@ -1,38 +1,60 @@
 package com.example.activacorp.pantallas.organizacion
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.activacorp.data.AppDatabase
-import com.example.activacorp.data.OrganizacionRepository
+import com.example.activacorp.domain.usecase.ActivacorpUseCases
 import com.example.activacorp.model.OrganizacionResumen
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
- * VIEWMODEL: OrganizacionesViewModel (Directorio y Consultas)
- * Gestiona el flujo reactivo de datos para el listado de organizaciones.
- * Consume la consulta con resumen de contactos desde Room y expone la colección a la UI.
+ * Consume GET /organizaciones (ya trae el total de contactos).
+ * Se mantiene la propiedad "organizaciones" para no tocar la pantalla.
  */
 class OrganizacionesViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    private val casos: ActivacorpUseCases = ActivacorpUseCases()
+) : ViewModel() {
 
-    // Instancia de la base de datos local y repositorio de organizaciones
-    private val database = AppDatabase.getInstance(application)
-    private val repository = OrganizacionRepository(database.organizacionDao())
+    private val _organizaciones = MutableStateFlow<List<OrganizacionResumen>>(emptyList())
+    val organizaciones: StateFlow<List<OrganizacionResumen>> = _organizaciones.asStateFlow()
 
-    /**
-     * Flujo de estado inmutable (StateFlow) que emite la lista consolidada de organizaciones
-     * junto con el recuento total de contactos asociados. Mantiene la suscripción activa durante 5 segundos.
-     */
-    val organizaciones: StateFlow<List<OrganizacionResumen>> =
-        repository
-            .observarResumen()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000), // Mantiene activo el flujo 5s tras pausar la UI
-                initialValue = emptyList()
-            )
+    private val _cargando = MutableStateFlow(true)
+    val cargando: StateFlow<Boolean> = _cargando.asStateFlow()
+
+    private val _mensajeError = MutableStateFlow<String?>(null)
+    val mensajeError: StateFlow<String?> = _mensajeError.asStateFlow()
+
+    private var cargandoAhora = false
+
+    init {
+        recargar()
+    }
+
+    fun recargar() {
+        if (cargandoAhora) return
+        cargandoAhora = true
+
+        viewModelScope.launch {
+            _cargando.value = true
+
+            try {
+                _organizaciones.value = casos.organizaciones()
+                _mensajeError.value = null
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                _mensajeError.value = e.message
+                    ?: "No se pudieron cargar las organizaciones."
+
+            } finally {
+                _cargando.value = false
+                cargandoAhora = false
+            }
+        }
+    }
 }

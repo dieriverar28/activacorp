@@ -113,6 +113,14 @@ fun LoginContent(
             )
 
             // Alerta visual ante credenciales inválidas o no encontradas en Room
+            if (uiState.mensajeError != null) {
+                Text(
+                    text = uiState.mensajeError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             if (uiState.errorCredenciales) {
                 Text(
                     text = "Correo o contraseña incorrectos",

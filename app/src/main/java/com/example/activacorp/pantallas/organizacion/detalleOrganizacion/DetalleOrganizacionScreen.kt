@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,6 +40,11 @@ fun DetalleOrganizacionScreen(
 ) {
     // Sincronización del estado UI reactivo
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // La API no es reactiva: recarga al entrar o volver a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.recargar()
+    }
 
     // Renderizado del componente Stateless de presentación
     DetalleOrganizacionContent(

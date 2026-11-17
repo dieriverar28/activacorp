@@ -20,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +53,11 @@ fun DetalleOportunidadScreen(
 ) {
     // Sincronización del estado UI reactivo
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Recarga el detalle y el historial cada vez que se vuelve a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.recargar()
+    }
 
     // Renderizado del contenido visual sin estado
     DetalleOportunidadContent(

@@ -10,6 +10,9 @@ data class LoginUiState(
     var errorClave: Boolean = false,
     var errorCredenciales: Boolean = false,
 
+    // Mensaje de error de red o de la API
+    var mensajeError: String? = null,
+
     // Indicador de carga
     var cargando: Boolean = false
 )
