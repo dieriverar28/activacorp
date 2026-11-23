@@ -14,7 +14,7 @@ ksp = "2.0.21-1.0.27"
 coil = "3.0.4" # NUEVO
 retrofit = "2.11.0"
 converterGson = "2.11.0"
-
+kover = "0.9.11" # <--- AGREGAR PARA TEST
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -43,3 +43,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" } # <--- AGREGAR PARA TEST
