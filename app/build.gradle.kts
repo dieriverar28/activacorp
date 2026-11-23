@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kover)
 }
 
 android {
@@ -55,6 +56,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,4 +65,29 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     ksp(libs.androidx.room.compiler)
+}
+kover {
+    reports {
+        filters {
+            includes {
+                classes(
+                    "com.example.activacorp.util.Validaciones*",
+                    "com.example.activacorp.util.Permisos*",
+                    "com.example.activacorp.util.Fechas*",
+                    "com.example.activacorp.util.Sesion*",
+                    "com.example.activacorp.domain.usecase.*",
+                    "com.example.activacorp.data.remote.ApiErrorMapper*",
+                    "com.example.activacorp.data.remote.ApiMappers*",
+                    "com.example.activacorp.data.repository.*",
+                    "com.example.activacorp.pantallas.login.LoginViewModel*",
+                    "com.example.activacorp.pantallas.dashboard.DashboardViewModel*",
+                    "com.example.activacorp.pantallas.contacto.CrearContactoViewModel*",
+                    "com.example.activacorp.pantallas.oportunidad.CrearOportunidadViewModel*",
+                    "com.example.activacorp.pantallas.oportunidad.OportunidadesViewModel*",
+                    "com.example.activacorp.pantallas.organizacion.CrearOrganizacionViewModel*",
+                    "com.example.activacorp.pantallas.organizacion.OrganizacionesViewModel*"
+                )
+            }
+        }
+    }
 }
