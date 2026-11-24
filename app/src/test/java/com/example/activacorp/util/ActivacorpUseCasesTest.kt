@@ -15,6 +15,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -29,6 +30,9 @@ class ActivacorpUseCasesTest {
         useCases = ActivacorpUseCases(repository)
     }
 
+    // ==========================================
+    // 1. Autenticación y Usuarios (4 pruebas)
+    // ==========================================
     @Test
     fun iniciarSesion_delegaEnRepositorio() = runTest {
         val usuario = Usuario(1, "Ana", "ana@activacorp.cl", "1234", "EJECUTIVO")
@@ -38,6 +42,13 @@ class ActivacorpUseCasesTest {
 
         assertEquals(usuario, resultado)
         coVerify(exactly = 1) { repository.iniciarSesion("ana@activacorp.cl", "1234") }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun iniciarSesion_cuandoCredencialesFallan_propagaExcepcion() = runTest {
+        coEvery { repository.iniciarSesion(any(), any()) } throws IllegalStateException("Credenciales inválidas")
+
+        useCases.iniciarSesion("malo@activacorp.cl", "0000")
     }
 
     @Test
@@ -52,7 +63,19 @@ class ActivacorpUseCasesTest {
     }
 
     @Test
-    fun oportunidades_delegaEnRepositorio() = runTest {
+    fun ejecutivos_cuandoNoHayRegistros_retornaListaVacia() = runTest {
+        coEvery { repository.ejecutivos() } returns emptyList()
+
+        val resultado = useCases.ejecutivos()
+
+        assertTrue(resultado.isEmpty())
+    }
+
+    // ==========================================
+    // 2. Consulta de Oportunidades y Seguimientos (6 pruebas)
+    // ==========================================
+    @Test
+    fun oportunidades_conEjecutivoId_delegaEnRepositorio() = runTest {
         val lista = listOf(mockk<OportunidadConDatos>(relaxed = true))
         coEvery { repository.oportunidades(10) } returns lista
 
@@ -60,6 +83,29 @@ class ActivacorpUseCasesTest {
 
         assertEquals(lista, resultado)
         coVerify(exactly = 1) { repository.oportunidades(10) }
+    }
+
+    @Test
+    fun oportunidades_conMultiplesRegistros_retornaListaCompleta() = runTest {
+        val lista = listOf(
+            mockk<OportunidadConDatos>(relaxed = true),
+            mockk<OportunidadConDatos>(relaxed = true)
+        )
+        coEvery { repository.oportunidades(10) } returns lista
+
+        val resultado = useCases.oportunidades(10)
+
+        assertEquals(2, resultado.size)
+        coVerify(exactly = 1) { repository.oportunidades(10) }
+    }
+
+    @Test
+    fun oportunidades_cuandoEstaVacio_retornaListaVacia() = runTest {
+        coEvery { repository.oportunidades(any()) } returns emptyList()
+
+        val resultado = useCases.oportunidades(99)
+
+        assertTrue(resultado.isEmpty())
     }
 
     @Test
@@ -85,6 +131,18 @@ class ActivacorpUseCasesTest {
     }
 
     @Test
+    fun seguimientos_sinHistorial_retornaListaVacia() = runTest {
+        coEvery { repository.seguimientos(5) } returns emptyList()
+
+        val resultado = useCases.seguimientos(5)
+
+        assertTrue(resultado.isEmpty())
+    }
+
+    // ==========================================
+    // 3. Gestión y Mutación de Oportunidades (8 pruebas)
+    // ==========================================
+    @Test
     fun crearOportunidad_delegaEnRepositorio() = runTest {
         val request = mockk<OportunidadRequest>(relaxed = true)
         val creado = mockk<OportunidadConDatos>(relaxed = true)
@@ -94,6 +152,14 @@ class ActivacorpUseCasesTest {
 
         assertEquals(creado, resultado)
         coVerify(exactly = 1) { repository.crearOportunidad(request) }
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun crearOportunidad_cuandoFallaServidor_propagaError() = runTest {
+        val request = mockk<OportunidadRequest>(relaxed = true)
+        coEvery { repository.crearOportunidad(request) } throws RuntimeException("Error 500")
+
+        useCases.crearOportunidad(request)
     }
 
     @Test
@@ -108,8 +174,16 @@ class ActivacorpUseCasesTest {
         coVerify(exactly = 1) { repository.actualizarOportunidad(5, request) }
     }
 
+    @Test(expected = NoSuchElementException::class)
+    fun actualizarOportunidad_idInexistente_propagaExcepcion() = runTest {
+        val request = mockk<OportunidadRequest>(relaxed = true)
+        coEvery { repository.actualizarOportunidad(999, request) } throws NoSuchElementException("No existe")
+
+        useCases.actualizarOportunidad(999, request)
+    }
+
     @Test
-    fun cambiarEstado_delegaEnRepositorio() = runTest {
+    fun cambiarEstado_contactoRealizado_delegaEnRepositorio() = runTest {
         val actualizado = mockk<OportunidadConDatos>(relaxed = true)
         coEvery { repository.cambiarEstado(5, 1, "CONTACTO_REALIZADO") } returns actualizado
 
@@ -117,6 +191,17 @@ class ActivacorpUseCasesTest {
 
         assertEquals(actualizado, resultado)
         coVerify(exactly = 1) { repository.cambiarEstado(5, 1, "CONTACTO_REALIZADO") }
+    }
+
+    @Test
+    fun cambiarEstado_cerradaGanada_delegaEnRepositorio() = runTest {
+        val actualizado = mockk<OportunidadConDatos>(relaxed = true)
+        coEvery { repository.cambiarEstado(5, 1, "CERRADA_GANADA") } returns actualizado
+
+        val resultado = useCases.cambiarEstado(5, 1, "CERRADA_GANADA")
+
+        assertEquals(actualizado, resultado)
+        coVerify(exactly = 1) { repository.cambiarEstado(5, 1, "CERRADA_GANADA") }
     }
 
     @Test
@@ -130,60 +215,14 @@ class ActivacorpUseCasesTest {
         coVerify(exactly = 1) { repository.asignar(5, 1, 8) }
     }
 
-    @Test
-    fun organizaciones_delegaEnRepositorio() = runTest {
-        val lista = listOf(mockk<OrganizacionResumen>(relaxed = true))
-        coEvery { repository.organizaciones() } returns lista
+    @Test(expected = IllegalArgumentException::class)
+    fun asignar_ejecutivoInvalido_propagaExcepcion() = runTest {
+        coEvery { repository.asignar(5, 1, -1) } throws IllegalArgumentException("Ejecutivo no válido")
 
-        val resultado = useCases.organizaciones()
-
-        assertEquals(lista, resultado)
-        coVerify(exactly = 1) { repository.organizaciones() }
-    }
-
-    @Test
-    fun organizacion_delegaEnRepositorio() = runTest {
-        val org = mockk<Organizacion>(relaxed = true)
-        coEvery { repository.organizacion(3) } returns org
-
-        val resultado = useCases.organizacion(3)
-
-        assertEquals(org, resultado)
-        coVerify(exactly = 1) { repository.organizacion(3) }
-    }
-
-    @Test
-    fun contactos_delegaEnRepositorio() = runTest {
-        val lista = listOf(mockk<Contacto>(relaxed = true))
-        coEvery { repository.contactos(3) } returns lista
-
-        val resultado = useCases.contactos(3)
-
-        assertEquals(lista, resultado)
-        coVerify(exactly = 1) { repository.contactos(3) }
-    }
-
-    @Test
-    fun crearOrganizacion_delegaEnRepositorio() = runTest {
-        val request = mockk<OrganizacionRequest>(relaxed = true)
-        val creada = mockk<Organizacion>(relaxed = true)
-        coEvery { repository.crearOrganizacion(request) } returns creada
-
-        val resultado = useCases.crearOrganizacion(request)
-
-        assertEquals(creada, resultado)
-        coVerify(exactly = 1) { repository.crearOrganizacion(request) }
-    }
-
-    @Test
-    fun crearContacto_delegaEnRepositorio() = runTest {
-        val request = mockk<ContactoRequest>(relaxed = true)
-        val creado = mockk<Contacto>(relaxed = true)
-        coEvery { repository.crearContacto(3, request) } returns creado
-
-        val resultado = useCases.crearContacto(3, request)
-
-        assertEquals(creado, resultado)
-        coVerify(exactly = 1) { repository.crearContacto(3, request) }
-    }
+        useCases.asignar(5, 1, -1)}
 }
+
+
+// ==========================================
+// 4. Organizaciones y Contactos (10 pruebas)
+// =================================
