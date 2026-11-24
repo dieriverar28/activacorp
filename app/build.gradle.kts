@@ -100,28 +100,30 @@ tasks.register<Copy>("exportarApkRelease") {
     include("*.apk")
     into(layout.buildDirectory.dir("apk-exportadas"))
     rename(".*", nombreApkSalida)
-kover {
-    reports {
-        filters {
-            includes {
-                classes(
-                    "com.example.activacorp.util.Validaciones*",
-                    "com.example.activacorp.util.Permisos*",
-                    "com.example.activacorp.util.Fechas*",
-                    "com.example.activacorp.util.Sesion*",
-                    "com.example.activacorp.domain.usecase.*",
-                    "com.example.activacorp.data.remote.ApiErrorMapper*",
-                    "com.example.activacorp.data.remote.ApiMappers*",
-                    "com.example.activacorp.data.repository.*",
-                    "com.example.activacorp.pantallas.login.LoginViewModel*",
-                    "com.example.activacorp.pantallas.dashboard.DashboardViewModel*",
-                    "com.example.activacorp.pantallas.contacto.CrearContactoViewModel*",
-                    "com.example.activacorp.pantallas.oportunidad.CrearOportunidadViewModel*",
-                    "com.example.activacorp.pantallas.oportunidad.OportunidadesViewModel*",
-                    "com.example.activacorp.pantallas.organizacion.CrearOrganizacionViewModel*",
-                    "com.example.activacorp.pantallas.organizacion.OrganizacionesViewModel*"
-                )
+    kover {
+        reports {
+            filters {
+                includes {
+                    classes(
+                        "com.example.activacorp.util.Validaciones*",
+                        "com.example.activacorp.util.Permisos*",
+                        "com.example.activacorp.util.Fechas*",
+                        "com.example.activacorp.util.Sesion*",
+                        "com.example.activacorp.domain.usecase.*",
+                        "com.example.activacorp.data.remote.ApiErrorMapper*",
+                        "com.example.activacorp.data.remote.ApiMappers*",
+                        "com.example.activacorp.data.repository.*",
+                        "com.example.activacorp.pantallas.login.LoginViewModel*",
+                        "com.example.activacorp.pantallas.dashboard.DashboardViewModel*",
+                        "com.example.activacorp.pantallas.contacto.CrearContactoViewModel*",
+                        "com.example.activacorp.pantallas.oportunidad.CrearOportunidadViewModel*",
+                        "com.example.activacorp.pantallas.oportunidad.OportunidadesViewModel*",
+                        "com.example.activacorp.pantallas.organizacion.CrearOrganizacionViewModel*",
+                        "com.example.activacorp.pantallas.organizacion.OrganizacionesViewModel*"
+                    )
+                }
             }
         }
     }
+
 }
